@@ -1,0 +1,132 @@
+# Semantic Blueprint - Research skill
+# Zone: opinionated (config locked, output divergent)
+# Reference: Denis Rothman, Context Engineering for Multi-Agent Systems, Level 5
+
+skill: research
+zone: opinionated
+version: 0.1.0
+
+# Rothman semantic blueprint structure (SRL-derived)
+scene_goal: >
+  Resolve questions that require current facts, external documentation, source
+  comparison, or precise attribution while keeping sourced facts, uncertainty,
+  and inference distinguishable.
+
+participants:
+  - name: researcher
+    role: Agent
+    description: The agent narrowing the question, selecting sources, comparing
+      evidence, and producing the answer.
+  - name: research_question
+    role: Patient
+    description: The user's request for facts, documentation, recency,
+      comparison, recommendation, or attribution that cannot be answered safely
+      from local context alone.
+  - name: sources
+    role: Source
+    description: Primary documents, official documentation, release notes,
+      standards, papers, datasets, reputable reporting, local files, and command
+      outputs justified by the question.
+
+action_to_complete:
+  predicate: answer_with_attributed_evidence
+  agent: researcher
+  patient: research_question
+  preconditions:
+    - The task needs current facts, external documentation, source comparison,
+      precise attribution, or high-stakes accuracy.
+    - The freshness requirement and source type can be stated before searching.
+  postconditions:
+    - The smallest source set sufficient for the answer has been consulted.
+    - Facts from sources are separated from inference or recommendation.
+    - Recency-sensitive claims include concrete dates when useful.
+    - The answer includes links, file references, or command references for the
+      sources used.
+
+# Output schema - soft-zone skill, so config is locked but prose shape is not.
+output_schema:
+  required_sections: []
+  reporting_surface: task_appropriate_prose
+  evidence_required: true
+  evidence_format: source_link_file_reference_or_command_output
+  acceptance_criteria:
+    - The answer states the question's freshness requirement when recency
+      matters.
+    - Source selection is proportional to the task's stakes and uncertainty.
+    - Primary sources are preferred when available and appropriate.
+    - Conflicting sources are compared instead of flattened into false
+      certainty.
+    - Sourced facts, inference, and residual uncertainty are distinguishable.
+    - Verbatim copied text stays short and is replaced with summary whenever
+      possible.
+
+# Research config - how to choose sources and depth.
+research_config:
+  source_preference_order:
+    - Local files or user-provided artifacts when the question is about this
+      repository or supplied material.
+    - Official documentation, standards, release notes, regulatory text, source
+      code, datasets, or papers for technical and high-stakes claims.
+    - Reputable reporting or institutional sources for current events and
+      public facts not covered by primary sources.
+    - Secondary explainers only when they add context after primary evidence is
+      consulted or unavailable.
+  depth_tiers:
+    quick:
+      use_when:
+        - The answer needs a single stable fact or a small documentation lookup.
+      expected_source_count: 1-2
+      comparison_required: false
+    normal:
+      use_when:
+        - The answer affects implementation, planning, purchasing,
+          recommendations, or current factual accuracy.
+      expected_source_count: 2-4
+      comparison_required: true_when_sources_conflict_or_stakes_are_material
+    high_stakes:
+      use_when:
+        - The answer involves medical, legal, financial, safety, security, or
+          other decisions where stale or wrong information can cause harm.
+      expected_source_count: 3+
+      comparison_required: true
+      caution_required: true
+  recency_policy:
+    must_check_current_sources_when:
+      - User asks for latest, current, recent, today, now, newest, or up to date.
+      - The entity, rule, price, product, API, law, schedule, or public role may
+        have changed.
+      - Recommendations depend on current availability, safety, popularity,
+        compatibility, or cost.
+    date_reporting:
+      - Use absolute dates when relative dates could be ambiguous.
+      - Name source publication or access dates when they affect interpretation.
+  stop_conditions:
+    - The consulted sources directly answer the question at the required depth.
+    - Additional sources would only repeat the same evidence without reducing
+      uncertainty.
+    - Available sources are insufficient; report the gap plainly instead of
+      broadening past the user's need.
+
+# Behavioral constraints - the agent's permitted moves regardless of substrate.
+# Substrate-level config (model, temperature, sampling) is the runtime's
+# concern (pi.dev's --model/--thinking flags), NOT the blueprint's. The
+# blueprint describes the task; the runtime decides the engine.
+behavior:
+  subagents_allowed: false
+  source_gathering_required: true
+  primary_sources_preferred: true
+  distinguish_fact_inference_uncertainty: true
+  recency_check_required_when_unstable: true
+  excessive_quotation: forbidden
+  unsupported_current_claims: forbidden
+
+# Negative space - when this skill MUST NOT activate
+do_not_use_when:
+  - The answer can be produced from current conversation context or local files
+    without external facts, comparison, or attribution.
+  - User asks for implementation, review, memory lookup, or Algorithm discipline
+    and research is not needed to complete that task.
+  - The only reason is curiosity about a stable fact already established in the
+    current context.
+  - The task would require private, paywalled, or inaccessible sources and no
+    useful public evidence can answer it.
