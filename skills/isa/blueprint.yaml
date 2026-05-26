@@ -1,0 +1,93 @@
+# Semantic Blueprint - ISA skill
+# Zone: deterministic (config AND output locked)
+# Reference: Denis Rothman, Context Engineering for Multi-Agent Systems, Level 5
+
+skill: isa
+zone: deterministic
+version: 0.1.0
+
+# Rothman semantic blueprint structure (SRL-derived)
+scene_goal: >
+  Produce a stable audit or handoff artifact that lets a future agent resume,
+  verify, or audit work without rereading the whole conversation.
+
+participants:
+  - name: recorder
+    role: Agent
+    description: The agent producing the ISA artifact.
+  - name: audit_work
+    role: Patient
+    description: The audit-bearing task, multi-session handoff, verification
+      result, or resumption surface that needs a stable record.
+  - name: evidence
+    role: Source
+    description: Concrete artifacts (file paths, line numbers, command outputs,
+      decisions, risks, and verification results) the recorder must preserve.
+
+action_to_complete:
+  predicate: produce_isa_artifact
+  agent: recorder
+  patient: audit_work
+  preconditions:
+    - Work needs future resumption, audit, handoff, or explicit evidence trail.
+    - Evidence, decisions, risks, and verification results can be separated.
+  postconditions:
+    - A concise ISA artifact exists with every required section populated.
+    - Evidence, decisions, unresolved risks, and verification results remain
+      distinct.
+    - The destination is identified as work/audit/ or work/handoffs/.
+
+# Output schema - both shape and evidence requirements locked
+output_schema:
+  required_sections:
+    - artifact_type
+    - objective
+    - scope
+    - evidence_inspected
+    - decisions
+    - implementation_state
+    - verification_results
+    - unresolved_risks
+    - next_actions
+    - destination
+    - reuse_conditions
+    - durable_lessons
+  evidence_required: true
+  evidence_format: file_path_with_line_number_or_command_output
+  isa_artifact_schema:
+    required_fields:
+      - date
+      - artifact_type
+      - objective
+      - scope
+      - evidence
+      - decisions
+      - risks
+      - verification
+      - destination
+  acceptance_criteria:
+    - Artifact type distinguishes audit record from frozen handoff.
+    - Objective and scope are explicit enough for a future agent to resume.
+    - Evidence references use file paths with line numbers or command output.
+    - Decisions include rationale rather than conclusion-only notes.
+    - Unresolved risks are separate from next actions.
+    - Verification results include command or check, observed signal, and status.
+    - Destination is work/audit/ for audit records or work/handoffs/ for handoffs.
+
+# Behavioral constraints - the agent's permitted moves regardless of substrate.
+# Substrate-level config (model, temperature, sampling) is the runtime's
+# concern (pi.dev's --model/--thinking flags), NOT the blueprint's. The
+# blueprint describes the task; the runtime decides the engine.
+behavior:
+  subagents_allowed: false
+  evidence_gathering_required: true
+  resumption_value_required: true
+  speculation_without_citation: forbidden
+  ceremony_without_reuse_value: forbidden
+
+# Negative space - when this skill MUST NOT activate
+do_not_use_when:
+  - User asks for ordinary status or a transient implementation summary.
+  - The work has no future resumption, audit, or handoff value.
+  - Evidence cannot be separated from decisions or risks.
+  - The artifact would duplicate IMPLEMENTATION_PLAN.md progress notes.
