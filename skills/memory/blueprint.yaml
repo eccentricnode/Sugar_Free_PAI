@@ -1,0 +1,122 @@
+# Semantic Blueprint - Memory skill
+# Zone: opinionated (config locked, output divergent)
+# Reference: Denis Rothman, Context Engineering for Multi-Agent Systems, Level 5
+
+skill: memory
+zone: opinionated
+version: 0.1.0
+
+# Rothman semantic blueprint structure (SRL-derived)
+scene_goal: >
+  Retrieve, capture, or promote durable context from pai-lite's file-first
+  memory system while keeping ordinary task chatter out of long-term state.
+
+participants:
+  - name: memory_operator
+    role: Agent
+    description: The agent deciding whether the task requires lookup, capture,
+      promotion, or a plain miss report.
+  - name: memory_task
+    role: Patient
+    description: The user's request for prior context, continuity, durable
+      capture, or learning promotion.
+  - name: memory_sources
+    role: Source
+    description: Routing maps, memory category indexes, learning records, and
+      specific durable notes justified by the task.
+
+action_to_complete:
+  predicate: resolve_memory_task
+  agent: memory_operator
+  patient: memory_task
+  preconditions:
+    - User asks about prior context, continuity, settled decisions, durable
+      capture, or promotion from learning.
+    - The task can be narrowed to lookup, capture, distillation, or miss report.
+  postconditions:
+    - The smallest justified memory source set has been read or changed.
+    - Missing durable context is reported plainly before current-context
+      inference is used.
+    - New memory is written only when the knowledge is durable and categorized.
+    - Learning capture remains separate from promoted memory.
+
+# Output schema - soft-zone skill, so config is locked but prose shape is not.
+output_schema:
+  required_sections: []
+  reporting_surface: task_appropriate_prose
+  evidence_required: true
+  evidence_format: file_path_with_line_number_or_changed_path_when_useful
+  acceptance_criteria:
+    - The response states which memory files were read or changed when that
+      helps future traceability.
+    - Lookup misses are identified as missing memory, not silently filled with
+      guesses.
+    - Current-context inference is separated from retrieved durable memory.
+    - Capture writes explain why the item matters for future work.
+    - Promotion writes keep raw learning, durable memory, and routing updates
+      distinct.
+
+# Retrieval config - what to scan and how to rank it.
+retrieval_config:
+  entry_points:
+    - routing/index.md
+    - routing/topics.md
+    - routing/projects.md
+    - routing/aliases.md
+    - memory/index.md
+    - learning/index.md
+  scan_order:
+    - Direct user-named files or categories.
+    - Routing maps for matching topic, project, alias, or workflow.
+    - Memory category indexes named by routing or the user.
+    - Specific memory files with matching title, use condition, or keyword.
+    - Learning inbox or distillations only for capture, promotion, or explicit
+      learning-history questions.
+  ranking_heuristics:
+    - Prefer explicit user-named project, topic, person, or decision matches.
+    - Prefer memory files whose `Use when:` line matches the task.
+    - Prefer settled decisions over raw learning notes for decision questions.
+    - Prefer project memory over generic facts for repository-specific context.
+    - Prefer the newest relevant note only after category and use-condition
+      relevance are equal.
+  stop_conditions:
+    - Enough durable context exists to answer the task.
+    - Routing and the relevant category index show no matching durable memory.
+    - Further scanning would broaden beyond the user's stated need.
+
+write_policy:
+  learning_inbox_allowed_when:
+    - New decision.
+    - Repeated workflow.
+    - Correction received.
+    - Plainly reusable signal.
+  memory_write_allowed_when:
+    - User explicitly asks to remember durable context.
+    - A reviewed learning item is promoted.
+    - The knowledge has a clear category and future use condition.
+  memory_write_forbidden_when:
+    - The note records ordinary task chatter.
+    - The item lacks a future use condition.
+    - The content belongs in IMPLEMENTATION_PLAN.md, work artifacts, or a raw
+      learning note instead.
+
+# Behavioral constraints - the agent's permitted moves regardless of substrate.
+# Substrate-level config (model, temperature, sampling) is the runtime's
+# concern (pi.dev's --model/--thinking flags), NOT the blueprint's. The
+# blueprint describes the task; the runtime decides the engine.
+behavior:
+  subagents_allowed: false
+  route_before_broad_scan: true
+  smallest_relevant_file_set_required: true
+  phase_1_auto_capture: forbidden
+  embeddings_or_retrieval_service_required: false
+  ordinary_chatter_capture: forbidden
+
+# Negative space - when this skill MUST NOT activate
+do_not_use_when:
+  - User asks a question answerable from the current turn without durable
+    context.
+  - User asks for implementation, review, or research without continuity needs.
+  - The only reason is that a fact might be useful someday.
+  - Capture would duplicate transient progress already tracked in
+    IMPLEMENTATION_PLAN.md or work artifacts.
