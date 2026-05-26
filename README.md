@@ -99,13 +99,8 @@ Start with this `README.md` for the tracked project contract. In a local pi.dev
 workspace, `AGENTS.md` may add operator instructions, but it is a local overlay
 and not a required product dependency. For non-trivial work, read
 `routing/index.md`, then load only the memory or skill files that the routing
-maps justify. Do not run daemons, hooks, background classifiers, auto-capture
-jobs, embeddings, or retrieval services as part of Phase 1.
+maps justify.
 
 Write durable lessons to `learning/inbox.md` only when a reusable signal is
 clear: a new decision, a repeated workflow, a correction, or a pattern worth
 distilling.
-
-## License
-
-Personal infrastructure. No license assigned yet.
