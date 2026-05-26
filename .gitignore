@@ -1,0 +1,35 @@
+# Agent instructions and machinery — stay local, never push.
+AGENTS.md
+IMPLEMENTATION_PLAN.md
+SHAPE.md
+fix_plan.md
+specs/
+scripts/
+.claude/
+failures/
+logs/
+
+# Markdown lint config (agent tooling, not product)
+.markdownlint-cli2.jsonc
+
+# Ralph runtime artifacts
+**/runs/
+
+# OS/editor
+.DS_Store
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Misc
+*.log
+*.pid
+
+# Test suite — local-only for now, not pushed.
+# Includes per-skill fixtures, captured runs, log.csv, and any sweep scripts.
+**/test-fixture.md
+**/test-results/
+**/_*.md
+**/_*.sh
+node_modules/

@@ -1,0 +1,86 @@
+# Semantic Blueprint - Verifier First skill
+# Zone: deterministic (config AND output locked)
+# Reference: Denis Rothman, Context Engineering for Multi-Agent Systems, Level 5
+
+skill: verifier-first
+zone: deterministic
+version: 0.1.0
+
+# Rothman semantic blueprint structure (SRL-derived)
+scene_goal: >
+  Establish falsifiable evidence before changing or accepting behavior so the
+  task can be implemented, reviewed, and verified against observable outcomes.
+
+participants:
+  - name: verifier
+    role: Agent
+    description: The agent responsible for defining evidence, tests, and
+      falsification criteria before acting.
+  - name: target_behavior
+    role: Patient
+    description: The behavior, defect, contract, or risky change that must be
+      proven before and after implementation or review.
+  - name: evidence
+    role: Source
+    description: Concrete artifacts (specs, tests, fixtures, source contracts,
+      command outputs, runtime observations, and user-provided acceptance
+      criteria) used to verify or falsify the target behavior.
+
+action_to_complete:
+  predicate: produce_verification_record
+  agent: verifier
+  patient: target_behavior
+  preconditions:
+    - User has requested evidence-first work, a high-risk change, test-defined
+      behavior, or verification before implementation.
+    - The target behavior can be observed through source, tests, fixtures,
+      commands, or a stated contract.
+  postconditions:
+    - The current behavior is described with evidence before editing.
+    - Verification criteria are falsifiable before implementation or review.
+    - The final result reports focused verification output and residual risk.
+
+# Output schema - both shape and falsification requirements locked
+output_schema:
+  required_sections:
+    - target_behavior
+    - evidence_surface
+    - verification_plan
+    - falsification_criteria
+    - implementation_or_review
+    - verification_results
+    - residual_risk_and_lessons
+  evidence_required: true
+  evidence_format: file_path_with_line_number_or_command_output
+  falsification_required: true
+  verification_result_schema:
+    required_fields:
+      - command_or_check
+      - expected_signal
+      - observed_signal
+      - status
+  acceptance_criteria:
+    - Evidence is gathered before implementation or acceptance.
+    - Verification criteria state what would disprove success.
+    - Each changed or accepted behavior maps to a command, test, fixture, or
+      source contract.
+    - Verification results distinguish expected and observed signals.
+    - Residual risk names unverified behavior instead of implying full coverage.
+
+# Behavioral constraints - the agent's permitted moves regardless of substrate.
+# Substrate-level config (model, temperature, sampling) is the runtime's
+# concern (pi.dev's --model/--thinking flags), NOT the blueprint's. The
+# blueprint describes the task; the runtime decides the engine.
+behavior:
+  subagents_allowed: false
+  evidence_before_editing_required: true
+  tests_or_checks_required_when_available: true
+  speculation_without_falsification: forbidden
+  unrelated_failures_must_be_recorded: true
+
+# Negative space - when this skill MUST NOT activate
+do_not_use_when:
+  - User asks for explanation only and no verification decision is needed.
+  - The task has no observable behavior, contract, command, or evidence surface.
+  - The user explicitly asks for a quick exploratory sketch without verification.
+  - The only reason is general complexity without a testable outcome.

@@ -1,0 +1,69 @@
+# Semantic Blueprint — Algorithm skill
+# Zone: deterministic (config AND output locked)
+# Reference: Denis Rothman, Context Engineering for Multi-Agent Systems, Level 5
+
+skill: algorithm
+zone: deterministic
+version: 0.1.0
+
+# Rothman semantic blueprint structure (SRL-derived)
+scene_goal: >
+  Apply audit-bearing reasoning discipline to a task so the reasoning record is
+  defensible, reproducible, and reviewable by a third party.
+
+participants:
+  - name: reasoner
+    role: Agent
+    description: The agent applying ISC discipline to the task.
+  - name: task
+    role: Patient
+    description: The work being subjected to ISC discipline. Must be audit-bearing,
+      multi-agent, high-risk, or explicitly user-invoked.
+  - name: evidence
+    role: Source
+    description: Concrete artifacts (file paths, command outputs, prior decisions,
+      cited sources) the reasoner must gather before acting.
+
+action_to_complete:
+  predicate: produce_isc_record
+  agent: reasoner
+  patient: task
+  preconditions:
+    - User has invoked Algorithm explicitly, OR task meets audit-bearing criteria.
+    - Evidence sources are identifiable before planning.
+  postconditions:
+    - An ISC record exists with all required sections populated.
+    - Each criterion in the record is observable and falsifiable.
+
+# Output schema — both shape and evidence requirements locked
+output_schema:
+  required_sections:
+    - objective_and_audit_boundary
+    - evidence_required
+    - plan
+    - execution
+    - verification
+    - isc_record
+    - durable_lessons
+  evidence_required: true
+  evidence_format: file_path_with_line_number_or_command_output
+  acceptance_criteria:
+    - Every claim in the record has a citation or evidence reference.
+    - The audit boundary is stated explicitly.
+    - Verification is observable (not a vibe assessment).
+
+# Behavioral constraints — the agent's permitted moves regardless of substrate.
+# Substrate-level config (model, temperature, sampling) is the runtime's
+# concern (pi.dev's --model/--thinking flags), NOT the blueprint's. The
+# blueprint describes the task; the runtime decides the engine.
+behavior:
+  subagents_allowed: false
+  evidence_gathering_required: true
+  speculation_without_citation: forbidden
+
+# Negative space — when this skill MUST NOT activate
+do_not_use_when:
+  - User is asking a normal question.
+  - Task is ordinary coding, review, or explanation.
+  - Only reason is "this seems hard."
+  - User has not invoked Algorithm AND no audit-bearing evidence exists.

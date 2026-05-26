@@ -1,0 +1,80 @@
+# Semantic Blueprint — Code Review skill
+# Zone: deterministic (config AND output locked)
+# Reference: Denis Rothman, Context Engineering for Multi-Agent Systems, Level 5
+
+skill: code-review
+zone: deterministic
+version: 0.1.0
+
+# Rothman semantic blueprint structure (SRL-derived)
+scene_goal: >
+  Review a code change for concrete defects, regressions, missing tests,
+  security risks, data-loss risks, and broken contracts before summarizing.
+
+participants:
+  - name: reviewer
+    role: Agent
+    description: The agent performing the review.
+  - name: code_change
+    role: Patient
+    description: The diff, files, branch, or implementation surface under review.
+  - name: evidence
+    role: Source
+    description: Concrete artifacts (file paths, line numbers, tests, contracts,
+      command outputs, and runtime behavior) the reviewer must inspect.
+
+action_to_complete:
+  predicate: produce_review_findings
+  agent: reviewer
+  patient: code_change
+  preconditions:
+    - User has requested a review, audit, regression check, or risk assessment.
+    - The review surface is identifiable from a diff, files, branch, or user
+      direction.
+  postconditions:
+    - Findings are reported before open questions, test gaps, or summary.
+    - Each finding cites concrete evidence.
+    - Findings are ordered by severity.
+    - No speculative issue is reported without an observable failure mode.
+
+# Output schema — both shape and evidence requirements locked
+output_schema:
+  required_sections:
+    - findings
+    - open_questions_or_assumptions
+    - test_gaps_or_residual_risk
+    - change_summary
+  evidence_required: true
+  evidence_format: file_path_with_line_number
+  finding_schema:
+    severity_order: [critical, high, medium, low]
+    required_fields:
+      - severity
+      - title
+      - evidence
+      - impact
+      - recommendation
+  acceptance_criteria:
+    - Findings are ordered by severity.
+    - Each finding includes impact, evidence, and the affected path or line.
+    - If no findings exist, the findings section says so explicitly.
+    - Summary remains secondary to findings.
+    - Praise and general style commentary are omitted unless they expose risk.
+
+# Behavioral constraints — the agent's permitted moves regardless of substrate.
+# Substrate-level config (model, temperature, sampling) is the runtime's
+# concern (pi.dev's --model/--thinking flags), NOT the blueprint's. The
+# blueprint describes the task; the runtime decides the engine.
+behavior:
+  subagents_allowed: false
+  evidence_gathering_required: true
+  speculation_without_citation: forbidden
+  findings_first_required: true
+  style_only_comments: forbidden
+
+# Negative space — when this skill MUST NOT activate
+do_not_use_when:
+  - User asks for implementation rather than review.
+  - User asks for explanation only.
+  - No code, diff, branch, or review surface is available.
+  - The requested review would require external facts that are unavailable.
