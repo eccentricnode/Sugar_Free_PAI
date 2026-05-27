@@ -1,3 +1,8 @@
+---
+name: research
+description: Current facts, external documentation, source comparison, and precise attribution. Use when the task needs up-to-date evidence, external docs, source-backed answers, or high-stakes claims that require citation. Config layer locked by blueprint.yaml.
+---
+
 # Research
 
 Current facts, external documentation, source comparison, and precise

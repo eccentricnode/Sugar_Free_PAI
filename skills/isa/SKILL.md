@@ -1,3 +1,8 @@
+---
+name: isa
+description: Stable audit and handoff artifacts. Use when audit-bearing work needs a durable artifact, a frozen handoff between agents or sessions, or an explicit evidence trail. Produces ISA documents that survive context loss. Config layer locked by blueprint.yaml.
+---
+
 # ISA
 
 Stable audit and handoff artifacts. The config layer is locked by

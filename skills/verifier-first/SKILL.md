@@ -1,3 +1,8 @@
+---
+name: verifier-first
+description: Evidence-first implementation and review. Use when a task requires evidence before implementation, when tests define the behavior, when the cost of a wrong change is high, or when the user asks for verifier-first or backpressure discipline. Config layer locked by blueprint.yaml.
+---
+
 # Verifier First
 
 Evidence-first implementation and review. The config layer is locked by

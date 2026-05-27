@@ -1,3 +1,8 @@
+---
+name: code-review
+description: Risk-focused code review. Use when the user asks for a review, audit, regression check, or risk assessment of code changes. Produces severity-ordered findings with evidence and remediation. Config layer locked by blueprint.yaml.
+---
+
 # Code Review
 
 Risk-focused code review. The config layer is locked by `blueprint.yaml`; this

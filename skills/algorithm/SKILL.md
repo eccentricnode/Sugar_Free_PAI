@@ -1,3 +1,8 @@
+---
+name: algorithm
+description: Audit-bearing reasoning discipline with ISC and frozen handoffs. Use when a task is audit-bearing, requires stable handoff across agents or sessions, or when the user explicitly asks for Algorithm, ISC, or audit discipline. Config layer locked by blueprint.yaml.
+---
+
 # Algorithm
 
 Audit-bearing reasoning discipline. The config layer is locked by `blueprint.yaml`; this file is the instruction layer the agent reads when the skill is invoked.

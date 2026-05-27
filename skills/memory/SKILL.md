@@ -1,3 +1,8 @@
+---
+name: memory
+description: Durable context lookup, capture, and promotion. Use when the task asks about prior context, settled decisions, project continuity, explicit memory capture, or promoting a learning into durable knowledge. Config layer locked by blueprint.yaml.
+---
+
 # Memory
 
 Durable context lookup, capture, and promotion. The config layer is locked by
