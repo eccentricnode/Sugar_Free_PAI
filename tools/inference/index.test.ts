@@ -205,6 +205,31 @@ describe("backpressure-first runner behavior", () => {
     expect(result.diagnostic).toContain("partial text");
   });
 
+  test("timeout fails closed even when a runner reports zero exit code", async () => {
+    const runner = recordingRunner((request) => ({
+      code: 0,
+      stdout: request.kind === "preflight" ? "OK" : "partial success text",
+      stderr: request.kind === "preflight" ? "" : "deadline exceeded",
+      timedOut: request.kind === "prompt",
+    }));
+
+    const result = await runInference(
+      { prompt: "real prompt" },
+      { runner, timeoutMs: 10 },
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result).toMatchObject({
+      stage: "execution",
+      timedOut: true,
+      error: "inference execution timed out after 10ms",
+    });
+    expect("text" in result).toBe(false);
+    if (result.ok) throw new Error("expected timeout failure");
+    expect(result.diagnostic).toContain("partial success text");
+    expect(result.diagnostic).toContain("deadline exceeded");
+  });
+
   test("model process failure returns captured diagnostic text", async () => {
     const runner = recordingRunner((request) => ({
       code: request.kind === "preflight" ? 0 : 9,
@@ -302,6 +327,92 @@ describe("live Codex runner seam", () => {
     expect(calls[0]?.args.join("\n")).not.toMatch(/anthropic|claude/i);
     expect(calls[0]?.env.CUSTOM_ENV).toBe("yes");
     expect(calls[0]?.timeoutMs).toBe(50);
+  });
+
+  test("live runner returns trimmed stdout text on success", async () => {
+    const process: LivePiProcessExecutor = async (_command, args) => ({
+      code: 0,
+      stdout: args.includes(REACHABILITY_PROMPT) ? "OK" : "  live answer  \n",
+      stderr: args.includes(REACHABILITY_PROMPT) ? "" : "debug warning",
+      killed: false,
+    });
+    const runner = createLiveCodexRunner({
+      cwd: "/tmp",
+      env: { [LIVE_INFERENCE_ENV]: "1" },
+      process,
+      timeoutMs: 50,
+    });
+
+    const result = await runInference(
+      { tier: "fast", prompt: "real prompt" },
+      { runner, timeoutMs: 50 },
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      text: "live answer",
+    });
+  });
+
+  test("live runner maps process timeout into a closed execution failure", async () => {
+    const process: LivePiProcessExecutor = async (_command, args) => ({
+      code: 0,
+      stdout: args.includes(REACHABILITY_PROMPT) ? "OK" : "partial live text",
+      stderr: args.includes(REACHABILITY_PROMPT) ? "" : "deadline exceeded",
+      killed: !args.includes(REACHABILITY_PROMPT),
+      timedOut: !args.includes(REACHABILITY_PROMPT),
+    });
+    const runner = createLiveCodexRunner({
+      cwd: "/tmp",
+      env: { [LIVE_INFERENCE_ENV]: "1" },
+      process,
+      timeoutMs: 50,
+    });
+
+    const result = await runInference(
+      { tier: "fast", prompt: "real prompt" },
+      { runner, timeoutMs: 50 },
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result).toMatchObject({
+      stage: "execution",
+      timedOut: true,
+      error: "inference execution timed out after 50ms",
+    });
+    if (result.ok) throw new Error("expected live timeout failure");
+    expect(result.diagnostic).toContain("partial live text");
+    expect(result.diagnostic).toContain("deadline exceeded");
+  });
+
+  test("live runner keeps stdout and stderr diagnostics on process failure", async () => {
+    const process: LivePiProcessExecutor = async (_command, args) => ({
+      code: args.includes(REACHABILITY_PROMPT) ? 0 : 23,
+      stdout: args.includes(REACHABILITY_PROMPT) ? "OK" : "last useful output",
+      stderr: args.includes(REACHABILITY_PROMPT) ? "" : "codex subprocess failed",
+      killed: false,
+    });
+    const runner = createLiveCodexRunner({
+      cwd: "/tmp",
+      env: { [LIVE_INFERENCE_ENV]: "1" },
+      process,
+      timeoutMs: 50,
+    });
+
+    const result = await runInference(
+      { tier: "fast", prompt: "real prompt" },
+      { runner, timeoutMs: 50 },
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result).toMatchObject({
+      stage: "execution",
+      exitCode: 23,
+      error: "codex subprocess failed",
+    });
+    if (result.ok) throw new Error("expected live process failure");
+    expect(result.diagnostic).toContain("last useful output");
+    expect(result.diagnostic).toContain("codex subprocess failed");
   });
 
   test("live runner preflight failure prevents the prompt process", async () => {

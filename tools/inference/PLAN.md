@@ -4,7 +4,7 @@
 
 - Created: 2026-06-09.
 - Contract: `specs/09-inference.md`.
-- Current loop state: runner seam implemented; tool-local gate is green.
+- Current loop state: live runner failure semantics complete; tool-local gate is green.
 
 ## Increments
 
@@ -29,7 +29,7 @@
    - Prove failed preflight prevents prompt execution.
    - Gate: `bunx tsc --noEmit && bun test`.
 
-3. [ ] Complete live runner failure semantics.
+3. [x] Complete live runner failure semantics.
    - Return trimmed plain model text on success.
    - Fail closed on timeout with no partial success.
    - Fail closed on model process failure with captured diagnostic text.
@@ -60,3 +60,6 @@
 - 2026-06-09: tool-local gate passed from `tools/inference/`: `bunx tsc --noEmit && bun test` reported 11 pass, 1 skip, 0 fail.
 - 2026-06-09: later increments mention preflight, timeout/process failure, and live opt-in work that partially landed here because the runner seam contract required complete backpressure behavior; review those increments before assigning the next worker.
 - 2026-06-09: increment 2 verified the live runner mirrors the memory worker spawn pattern with injectable `node:child_process` execution, provider-qualified Codex validation happens before preflight, and a failed reachability preflight prevents the real prompt process.
+- 2026-06-09: increment 3 fixed timeout handling so `timedOut: true` fails closed even when a runner or live executor reports exit code 0.
+- 2026-06-09: increment 3 carries an explicit timeout bit from the live process executor, preserves captured stdout/stderr diagnostics with labels, trims successful stdout text, and keeps deterministic Codex-only/no-Anthropic coverage network-free.
+- 2026-06-09: tool-local gate passed from `tools/inference/`: `bunx tsc --noEmit && bun test` reported 16 pass, 1 skip, 0 fail.

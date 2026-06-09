@@ -67,6 +67,7 @@ export interface LivePiProcessResult {
   stdout: string;
   stderr: string;
   killed: boolean;
+  timedOut?: boolean;
 }
 
 export type LivePiProcessExecutor = (
@@ -119,7 +120,12 @@ function isInferenceTier(value: string): value is InferenceTier {
 }
 
 function outputTail(stdout = "", stderr = "", maxChars = 800): string {
-  const combined = [stdout.trim(), stderr.trim()].filter(Boolean).join("\n");
+  const combined = [
+    stdout.trim() ? `stdout:\n${stdout.trim()}` : "",
+    stderr.trim() ? `stderr:\n${stderr.trim()}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
   if (combined.length <= maxChars) return combined;
   return combined.slice(combined.length - maxChars);
 }
@@ -173,7 +179,13 @@ function defaultLivePiProcessExecutor(
       stderr += String(chunk);
     });
     child.on("error", (error) => {
-      finish({ code: 2, stdout, stderr: error.message, killed: timedOut });
+      finish({
+        code: 2,
+        stdout,
+        stderr: error.message,
+        killed: timedOut,
+        timedOut,
+      });
     });
     child.on("close", (code, signal) => {
       const timeoutMessage = timedOut
@@ -184,6 +196,7 @@ function defaultLivePiProcessExecutor(
         stdout,
         stderr: [stderr.trim(), timeoutMessage].filter(Boolean).join("\n"),
         killed: timedOut || signal !== null,
+        timedOut,
       });
     });
   });
@@ -243,10 +256,12 @@ export function createLiveCodexRunner(
         },
       );
       return {
-        code: result.code,
+        code: result.timedOut && result.code === 0 ? 1 : result.code,
         stdout: result.stdout,
         stderr: result.stderr,
-        timedOut: result.killed && result.stderr.includes("timed out"),
+        timedOut:
+          result.timedOut === true ||
+          (result.killed && /\btimed?\s*out\b|timeout/i.test(result.stderr)),
       };
     },
   };
@@ -384,7 +399,7 @@ export async function runInference(
     prompt: REACHABILITY_PROMPT,
     timeoutMs,
   });
-  if (preflight.code !== 0) {
+  if (preflight.timedOut || preflight.code !== 0) {
     return runnerFailure("preflight", tierResult.tier, model, preflight, timeoutMs);
   }
 
@@ -394,7 +409,7 @@ export async function runInference(
     prompt,
     timeoutMs,
   });
-  if (response.code !== 0) {
+  if (response.timedOut || response.code !== 0) {
     return runnerFailure("execution", tierResult.tier, model, response, timeoutMs);
   }
 
