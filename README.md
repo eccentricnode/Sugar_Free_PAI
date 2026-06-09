@@ -14,10 +14,10 @@ classifier daemons, mode ceremony, or background services.
 ## Install on pi.dev
 
 ```sh
-pi install git:github.com/eccentricnode/SUGAR_FREE_PAI
+pi install git:github.com/eccentricnode/Sugar_Free_PAI
 ```
 
-This installs pai-lite as a [pi package](https://pi.dev/packages):
+This installs SUGAR_FREE_PAI as a [pi package](https://pi.dev/packages):
 
 - The `extensions/blueprint-loader.ts` extension auto-loads, scanning
   `skills/<name>/blueprint.yaml` files on every turn and injecting the
@@ -28,13 +28,13 @@ This installs pai-lite as a [pi package](https://pi.dev/packages):
 For project-local install (writes to `.pi/settings.json`):
 
 ```sh
-pi install -l git:github.com/eccentricnode/SUGAR_FREE_PAI
+pi install -l git:github.com/eccentricnode/Sugar_Free_PAI
 ```
 
 For ephemeral one-off:
 
 ```sh
-pi -e git:github.com/eccentricnode/SUGAR_FREE_PAI
+pi -e git:github.com/eccentricnode/Sugar_Free_PAI
 ```
 
 ## Status
