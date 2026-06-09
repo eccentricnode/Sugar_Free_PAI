@@ -1,6 +1,6 @@
 # Update Model — base vs. userspace
 
-How sugarfreepai takes engine updates **without breaking your customizations**.
+How SUGAR_FREE_PAI takes engine updates **without breaking your customizations**.
 Modeled on the QMK userspace pattern: separate your stuff from the framework by
 *interface*, so most updates need zero merge.
 
@@ -55,7 +55,7 @@ Reserve this for real shape changes only. Everything else is Mechanism 1.
 
 ## Git topology (the piece PAI lacks)
 
-PAI has no upstream-pull mechanism. sugarfreepai uses a normal fork model:
+PAI has no upstream-pull mechanism. SUGAR_FREE_PAI uses a normal fork model:
 
 - `origin` — your deployed instance.
 - `upstream` — the canonical engine; `git pull --rebase upstream main` on a

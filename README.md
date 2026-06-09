@@ -1,4 +1,4 @@
-# sugarfreepai
+# SUGAR_FREE_PAI
 
 > **PAI with the sugar removed** (formerly `pai-lite`). The sugar was the hook
 > pipeline, the classifier daemon, the mode ceremony, the voice, the Pulse
@@ -14,7 +14,7 @@ classifier daemons, mode ceremony, or background services.
 ## Install on pi.dev
 
 ```sh
-pi install git:github.com/eccentricnode/pai-lite
+pi install git:github.com/eccentricnode/SUGAR_FREE_PAI
 ```
 
 This installs pai-lite as a [pi package](https://pi.dev/packages):
@@ -28,13 +28,13 @@ This installs pai-lite as a [pi package](https://pi.dev/packages):
 For project-local install (writes to `.pi/settings.json`):
 
 ```sh
-pi install -l git:github.com/eccentricnode/pai-lite
+pi install -l git:github.com/eccentricnode/SUGAR_FREE_PAI
 ```
 
 For ephemeral one-off:
 
 ```sh
-pi -e git:github.com/eccentricnode/pai-lite
+pi -e git:github.com/eccentricnode/SUGAR_FREE_PAI
 ```
 
 ## Status
