@@ -1,4 +1,9 @@
-# pai-lite
+# sugarfreepai
+
+> **PAI with the sugar removed** (formerly `pai-lite`). The sugar was the hook
+> pipeline, the classifier daemon, the mode ceremony, the voice, the Pulse
+> daemon — empty calories from a weaker-model era. Same brain (memory, skills,
+> routing, learning), file-first and daemon-free. Tastes the same. No crash.
 
 A lighter personal AI infrastructure that runs on **pi.dev** as the substrate.
 
@@ -92,6 +97,22 @@ pai-lite/
 - **Skills** — pi.dev-native `skills/<name>/SKILL.md` workflows.
 - **Routing** — small maps from intent to relevant memory and skills.
 - **Learning** — raw notes go to `inbox.md`; reviews promote durable items.
+
+## Userspace & updates
+
+Your customizations live in a **userspace** that engine updates never touch — the
+QMK pattern: separate your stuff from the framework by interface, so `git pull`
+of the engine needs no merge. Register it:
+
+```sh
+export PAILITE_USERSPACE=~/path/to/your/userspace
+```
+
+Skills/blueprints resolve **userspace → workspace (`cwd`) → shipped defaults**,
+highest precedence first; a same-named skill in a higher layer *shadows* the
+lower one. The repo ships examples; your userspace overrides them. Full design —
+including the versioned migrator for schema changes — in
+[`UPDATE_MODEL.md`](UPDATE_MODEL.md).
 
 ## Runtime contract
 

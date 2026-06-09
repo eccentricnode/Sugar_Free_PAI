@@ -1,11 +1,12 @@
 {
-  "name": "pai-lite",
+  "name": "sugarfreepai",
   "version": "0.1.0",
-  "description": "Lighter PAI on pi.dev — memory, skills, routing, learning, with Rothman semantic blueprint loader",
+  "description": "PAI with the sugar removed — lighter PAI on pi.dev (memory, skills, routing, learning) with Rothman semantic blueprint loader and a userspace overlay for breakage-free updates",
   "keywords": [
     "pi-package",
     "pi",
     "extension",
+    "sugarfreepai",
     "pai-lite",
     "semantic-blueprint",
     "context-engineering"

@@ -1,15 +1,24 @@
 /**
- * blueprint-loader — pai-lite extension for pi.
+ * blueprint-loader — sugarfreepai (pai-lite) extension for pi.
  *
- * On every agent turn, scans package-local and workspace `skills/` directories
- * for `blueprint.yaml` sibling files (Rothman semantic blueprint pattern:
- * Level 5 deterministic config). Injects the discovered blueprints into the
- * system prompt under a stable header so the agent has the config layer
- * alongside the SKILL.md instruction layer.
+ * On every agent turn, scans layered `skills/` roots for `blueprint.yaml`
+ * sibling files (Rothman semantic blueprint pattern: Level 5 deterministic
+ * config) and injects them into the system prompt under a stable header, so the
+ * agent has the config layer alongside the SKILL.md instruction layer.
  *
- * Convention: a blueprint lives at `skills/<name>/blueprint.yaml`. The file is
- * read as-is — no parsing, no validation. The model consumes it directly as
- * structured config.
+ * USERSPACE MODEL (QMK-style — see UPDATE_MODEL.md).
+ * Blueprints are discovered from layered roots, highest precedence first; a
+ * skill found in a higher root SHADOWS the same-named skill in a lower root:
+ *
+ *   1. userspace  — $PAILITE_USERSPACE/skills  (your customizations; never in this repo)
+ *   2. workspace  — <cwd>/skills               (project-local)
+ *   3. package    — this repo's skills/        (shipped defaults / examples)
+ *
+ * So updating the engine (`git pull`) never clobbers your skills: keep them in
+ * the userspace root and they win. The base ships examples; userspace overrides.
+ *
+ * Convention: a blueprint lives at `skills/<name>/blueprint.yaml`, read as-is —
+ * no parsing, no validation. The model consumes it directly as structured config.
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
@@ -31,12 +40,12 @@ skill, honor its blueprint's output_schema.required_sections and
 acceptance_criteria. Do not paraphrase the schema; produce sections in the exact
 order specified.`;
 
-interface BlueprintRoot {
+export interface BlueprintRoot {
 	label: string;
 	dir: string;
 }
 
-interface DiscoveredBlueprint {
+export interface DiscoveredBlueprint {
 	skill: string;
 	source: string;
 	path: string;
@@ -48,11 +57,31 @@ interface RenderedBlueprints {
 	count: number;
 }
 
-function blueprintRoots(cwd: string): BlueprintRoot[] {
-	const candidates: BlueprintRoot[] = [
-		{ label: "workspace", dir: join(cwd, "skills") },
-		{ label: "pai-lite package", dir: join(PACKAGE_ROOT, "skills") },
-	];
+/** Resolve the explicit userspace root from the environment, if registered. */
+export function resolveUserspace(
+	env: Record<string, string | undefined> = process.env,
+): string | undefined {
+	const raw = env.PAILITE_USERSPACE?.trim();
+	return raw ? resolve(raw) : undefined;
+}
+
+/**
+ * Ordered blueprint roots, HIGHEST precedence first. A skill discovered in an
+ * earlier root shadows the same-named skill in any later root. Duplicate
+ * resolved paths are collapsed so the same directory is never scanned twice.
+ */
+export function blueprintRoots(opts: {
+	cwd: string;
+	userspace?: string;
+	packageRoot?: string;
+}): BlueprintRoot[] {
+	const packageRoot = opts.packageRoot ?? PACKAGE_ROOT;
+	const candidates: BlueprintRoot[] = [];
+	if (opts.userspace) {
+		candidates.push({ label: "userspace", dir: join(opts.userspace, "skills") });
+	}
+	candidates.push({ label: "workspace", dir: join(opts.cwd, "skills") });
+	candidates.push({ label: "package (defaults)", dir: join(packageRoot, "skills") });
 
 	const seen = new Set<string>();
 	const roots: BlueprintRoot[] = [];
@@ -67,7 +96,6 @@ function blueprintRoots(cwd: string): BlueprintRoot[] {
 
 function discoverBlueprintsInRoot(root: BlueprintRoot): DiscoveredBlueprint[] {
 	if (!existsSync(root.dir)) return [];
-	const found: DiscoveredBlueprint[] = [];
 	let entries: string[];
 	try {
 		entries = readdirSync(root.dir).sort((a, b) => a.localeCompare(b));
@@ -75,6 +103,7 @@ function discoverBlueprintsInRoot(root: BlueprintRoot): DiscoveredBlueprint[] {
 		return [];
 	}
 
+	const found: DiscoveredBlueprint[] = [];
 	for (const entry of entries) {
 		const skillPath = join(root.dir, entry);
 		let s;
@@ -91,23 +120,23 @@ function discoverBlueprintsInRoot(root: BlueprintRoot): DiscoveredBlueprint[] {
 			const content = readFileSync(bpPath, "utf-8");
 			found.push({ skill: entry, source: root.label, path: bpPath, content });
 		} catch {
-			// Silent: extension must not crash the session over a single bad file.
+			// Silent: the extension must not crash the session over one bad file.
 		}
 	}
 	return found;
 }
 
-function discoverBlueprints(cwd: string): DiscoveredBlueprint[] {
+/**
+ * Discover blueprints across the given ordered roots, applying shadow-by-name:
+ * the FIRST root (highest precedence) to define a skill wins. Result is sorted
+ * by skill name for stable rendering.
+ */
+export function discoverBlueprints(roots: BlueprintRoot[]): DiscoveredBlueprint[] {
 	const bySkill = new Map<string, DiscoveredBlueprint>();
-	for (const blueprint of blueprintRoots(cwd).flatMap(discoverBlueprintsInRoot)) {
+	for (const blueprint of roots.flatMap(discoverBlueprintsInRoot)) {
 		if (!bySkill.has(blueprint.skill)) bySkill.set(blueprint.skill, blueprint);
 	}
-	return Array.from(bySkill.values()).sort(
-		(a, b) =>
-			a.skill.localeCompare(b.skill) ||
-			a.source.localeCompare(b.source) ||
-			a.path.localeCompare(b.path),
-	);
+	return Array.from(bySkill.values()).sort((a, b) => a.skill.localeCompare(b.skill));
 }
 
 function cacheKeyFor(blueprints: DiscoveredBlueprint[]): string {
@@ -120,7 +149,7 @@ function cacheKeyFor(blueprints: DiscoveredBlueprint[]): string {
 	return hash.digest("hex");
 }
 
-function renderBlueprints(blueprints: DiscoveredBlueprint[]): string {
+export function renderBlueprints(blueprints: DiscoveredBlueprint[]): string {
 	if (blueprints.length === 0) return "";
 	const sections = blueprints.map(
 		(b) =>
@@ -140,7 +169,8 @@ export default function (pi: ExtensionAPI) {
 	let cacheKey: string | undefined;
 
 	function refresh(cwd: string): RenderedBlueprints {
-		const blueprints = discoverBlueprints(cwd);
+		const roots = blueprintRoots({ cwd, userspace: resolveUserspace() });
+		const blueprints = discoverBlueprints(roots);
 		const key = cacheKeyFor(blueprints);
 		if (key === cacheKey && cached !== undefined) return cached;
 
@@ -155,7 +185,7 @@ export default function (pi: ExtensionAPI) {
 	pi.on("session_start", (_event, ctx) => {
 		const rendered = refresh(ctx.cwd);
 		if (rendered.text) {
-			ctx.ui.setStatus("blueprints", `pai-lite: ${rendered.count} blueprints loaded`);
+			ctx.ui.setStatus("blueprints", `sugarfreepai: ${rendered.count} blueprints loaded`);
 		} else {
 			ctx.ui.setStatus("blueprints", undefined);
 		}
