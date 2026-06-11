@@ -79,6 +79,7 @@ else
   done
 fi
 RUN_SET_DIR="$RUNS_DIR/$RUN_SET_ID"
+PRE_SWEEP_STATUS="$(git status --porcelain=v1 --untracked-files=all 2>/dev/null || true)"
 mkdir -p "$RUN_SET_DIR"
 
 MANIFEST="$RUN_SET_DIR/manifest.csv"
@@ -87,6 +88,12 @@ ARTIFACT_REPORT="$RUN_SET_DIR/artifact-report.md"
 ARTIFACTS_DIR="$RUN_SET_DIR/artifacts"
 EXPECTED_ARTIFACT_PATHS="$RUN_SET_DIR/expected-artifact-paths.txt"
 MISSING_ARTIFACT_PATHS="$RUN_SET_DIR/missing-artifact-paths.txt"
+MUTATION_REPORT="$RUN_SET_DIR/repository-mutation-report.md"
+REPOSITORY_STATUS_BEFORE="$RUN_SET_DIR/repository-status-before.txt"
+REPOSITORY_STATUS_AFTER="$RUN_SET_DIR/repository-status-after.txt"
+REPOSITORY_STATUS_NEW="$RUN_SET_DIR/repository-status-new.txt"
+REPOSITORY_STATUS_EXPECTED="$RUN_SET_DIR/repository-status-expected.txt"
+REPOSITORY_STATUS_UNEXPECTED="$RUN_SET_DIR/repository-status-unexpected.txt"
 BRANCH="$(git branch --show-current 2>/dev/null || true)"
 [ -z "$BRANCH" ] && BRANCH="detached"
 HEAD_REV="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
@@ -327,6 +334,113 @@ render_artifact_report() {
   } > "$ARTIFACT_REPORT"
 }
 
+capture_repository_status() {
+  git status --porcelain=v1 --untracked-files=all 2>/dev/null || true
+}
+
+status_path_from_line() {
+  local line="$1"
+  printf '%s\n' "${line:3}"
+}
+
+fixture_permits_mutation_path() {
+  local path="$1"
+
+  case "$path" in
+    work/handoffs/*)
+      grep -Eq 'work/handoffs/' "$FIXTURE_FILE"
+      ;;
+    work/audit/*)
+      grep -Eq 'work/audit/' "$FIXTURE_FILE"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+named_artifact_path() {
+  local path="$1"
+  grep -Fxq "$path" "$EXPECTED_ARTIFACT_PATHS"
+}
+
+expected_repository_mutation() {
+  local line="$1"
+  local path
+  path="$(status_path_from_line "$line")"
+
+  case "$path" in
+    "$RUN_SET_DIR"|"$RUN_SET_DIR"/*|"$LOG_FILE")
+      return 0
+      ;;
+  esac
+
+  if named_artifact_path "$path" && fixture_permits_mutation_path "$path"; then
+    return 0
+  fi
+
+  return 1
+}
+
+write_repository_mutation_report() {
+  local line
+  local failed=0
+
+  printf '%s\n' "$PRE_SWEEP_STATUS" | sed '/^$/d' | sort > "$REPOSITORY_STATUS_BEFORE"
+  capture_repository_status | sed '/^$/d' | sort > "$REPOSITORY_STATUS_AFTER"
+  comm -13 "$REPOSITORY_STATUS_BEFORE" "$REPOSITORY_STATUS_AFTER" > "$REPOSITORY_STATUS_NEW"
+  : > "$REPOSITORY_STATUS_EXPECTED"
+  : > "$REPOSITORY_STATUS_UNEXPECTED"
+
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    if expected_repository_mutation "$line"; then
+      printf '%s\n' "$line" >> "$REPOSITORY_STATUS_EXPECTED"
+    else
+      printf '%s\n' "$line" >> "$REPOSITORY_STATUS_UNEXPECTED"
+      failed=1
+    fi
+  done < "$REPOSITORY_STATUS_NEW"
+
+  {
+    printf '# Repository Mutation Report\n\n'
+    printf -- '- run_set_id: %s\n' "$RUN_SET_ID"
+    printf -- '- skill: %s\n' "$SKILL"
+    printf -- '- status_before: %s\n' "$REPOSITORY_STATUS_BEFORE"
+    printf -- '- status_after: %s\n' "$REPOSITORY_STATUS_AFTER"
+    printf -- '- new_status_entries: %s\n' "$REPOSITORY_STATUS_NEW"
+    printf -- '- expected_status_entries: %s\n' "$REPOSITORY_STATUS_EXPECTED"
+    printf -- '- unexpected_status_entries: %s\n' "$REPOSITORY_STATUS_UNEXPECTED"
+
+    printf '\n## Expected harness-owned outputs\n\n'
+    find "$RUN_SET_DIR" -type f | sort | sed 's/^/- /'
+    printf -- '- %s\n' "$MUTATION_REPORT"
+
+    printf '\n## Expected repository status entries\n\n'
+    if [ -s "$REPOSITORY_STATUS_EXPECTED" ]; then
+      sed 's/^/- `/' "$REPOSITORY_STATUS_EXPECTED" | sed 's/$/`/'
+    else
+      printf 'No expected repository status entries outside ignored harness outputs.\n'
+    fi
+
+    printf '\n## Unexpected repository status entries\n\n'
+    if [ -s "$REPOSITORY_STATUS_UNEXPECTED" ]; then
+      sed 's/^/- `/' "$REPOSITORY_STATUS_UNEXPECTED" | sed 's/$/`/'
+    else
+      printf 'No unexpected repository status entries.\n'
+    fi
+
+    printf '\n## Pre-existing repository status entries\n\n'
+    if [ -s "$REPOSITORY_STATUS_BEFORE" ]; then
+      sed 's/^/- `/' "$REPOSITORY_STATUS_BEFORE" | sed 's/$/`/'
+    else
+      printf 'No pre-existing repository status entries.\n'
+    fi
+  } > "$MUTATION_REPORT"
+
+  return "$failed"
+}
+
 {
   printf 'run_set_id,skill,fixture_path,run_number,requested_count,timestamp_utc,provider,model,branch,head,invocation_mode,run_file,exit_status\n'
 } > "$MANIFEST"
@@ -343,6 +457,7 @@ echo "[fixture preview] $(echo "$FIXTURE" | head -1 | cut -c1-100)..."
 SWEEP_FAILED=0
 LOG_FAILED=0
 ARTIFACT_FAILED=0
+MUTATION_FAILED=0
 
 for N in $(seq 1 "$COUNT"); do
   NN=$(printf "%02d" "$N")
@@ -414,6 +529,7 @@ render_artifact_report
 
 mapfile -t TRACKING_FIELDS < <(extract_tracking_fields)
 append_tracking_row "${TRACKING_FIELDS[@]}" || LOG_FAILED=1
+write_repository_mutation_report || MUTATION_FAILED=1
 
 FINAL_FAILED=0
 
@@ -429,6 +545,11 @@ fi
 
 if [ "$ARTIFACT_FAILED" -ne 0 ]; then
   echo "[$(date +%H:%M:%S)] sweep failed: one or more named artifacts were missing (skill=$SKILL run_set=$RUN_SET_ID)" >&2
+  FINAL_FAILED=1
+fi
+
+if [ "$MUTATION_FAILED" -ne 0 ]; then
+  echo "[$(date +%H:%M:%S)] sweep failed: unexpected repository mutations detected (skill=$SKILL run_set=$RUN_SET_ID)" >&2
   FINAL_FAILED=1
 fi
 

@@ -28,7 +28,10 @@ afterEach(() => {
   }
 });
 
-function createDisposableSkill(name: string): string {
+function createDisposableSkill(
+  name: string,
+  options: { fixtureExtra?: string[] } = {},
+): string {
   const skillDir = join(repoRoot, "skills", name);
   createdSkillDirs.push(skillDir);
   rmSync(skillDir, { force: true, recursive: true });
@@ -57,6 +60,7 @@ function createDisposableSkill(name: string): string {
       "- section_presence_rate",
       "- shape_variance_notes",
       "",
+      ...(options.fixtureExtra ?? []),
     ].join("\n"),
   );
   mkdirSync(join(skillDir, "test-results"), { recursive: true });
@@ -192,6 +196,16 @@ describe("QA sweep run-set capture", () => {
     expect(logRow[4]).toBe("unscored");
     expect(logRow[5]).toContain(`run_set_id=${runSetId}`);
     expect(logRow[5]).toContain(`head=${firstManifestRow[9]}`);
+
+    const mutationReport = readFileSync(
+      join(runSetDir, "repository-mutation-report.md"),
+      "utf8",
+    );
+    expect(mutationReport).toContain("# Repository Mutation Report");
+    expect(mutationReport).toContain("## Expected harness-owned outputs");
+    expect(mutationReport).toContain("run-01.md");
+    expect(mutationReport).toContain("manifest.csv");
+    expect(mutationReport).toContain("No unexpected repository status entries.");
   });
 
   test("failed invocation is captured but does not stop later runs", () => {
@@ -280,7 +294,14 @@ describe("QA sweep run-set capture", () => {
 
   test("present named artifact is captured as run-set evidence", () => {
     const skillName = `qa-sweep-artifact-test-${process.pid}`;
-    createDisposableSkill(skillName);
+    createDisposableSkill(skillName, {
+      fixtureExtra: [
+        "## Repository mutations",
+        "",
+        "- This fixture explicitly permits named artifacts under `work/handoffs/`.",
+        "",
+      ],
+    });
     const artifactPath = `work/handoffs/qa-sweep-artifact-${process.pid}.md`;
     createdRepoFiles.push(join(repoRoot, artifactPath));
     const fakePiDir = createFakePi({
@@ -326,6 +347,13 @@ describe("QA sweep run-set capture", () => {
     const runOutput = readFileSync(join(runSetDir, "run-01.md"), "utf8");
     expect(runOutput).toContain("Created artifact: " + artifactPath);
     expect(runOutput).not.toContain("artifact_type: frozen_handoff");
+
+    const mutationReport = readFileSync(
+      join(runSetDir, "repository-mutation-report.md"),
+      "utf8",
+    );
+    expect(mutationReport).toContain(`?? ${artifactPath}`);
+    expect(mutationReport).toContain("No unexpected repository status entries.");
   });
 
   test("missing named artifact is recorded and fails the sweep", () => {
@@ -365,6 +393,38 @@ describe("QA sweep run-set capture", () => {
     const evidence = readFileSync(join(evidenceDir, evidenceFiles[0]), "utf8");
     expect(evidence).toContain("# Missing Artifact");
     expect(evidence).toContain("status: missing");
+  });
+
+  test("unpermitted repository mutation is reported and fails the sweep", () => {
+    const skillName = `qa-sweep-mutation-test-${process.pid}`;
+    createDisposableSkill(skillName);
+    const mutationPath = `work/handoffs/qa-sweep-unexpected-${process.pid}.md`;
+    createdRepoFiles.push(join(repoRoot, mutationPath));
+    const fakePiDir = createFakePi({
+      artifactPath: mutationPath,
+      artifactContent: "unexpected repo mutation",
+    });
+
+    const result = spawnSync("bash", ["_qa-sweep.sh", skillName, "1"], {
+      cwd: repoRoot,
+      env: {
+        ...process.env,
+        PATH: `${fakePiDir}:${process.env.PATH ?? ""}`,
+      },
+      encoding: "utf8",
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("unexpected repository mutations detected");
+
+    const runSetDir = onlyRunSetDir(skillName);
+    const mutationReport = readFileSync(
+      join(runSetDir, "repository-mutation-report.md"),
+      "utf8",
+    );
+    expect(mutationReport).toContain("## Unexpected repository status entries");
+    expect(mutationReport).toContain(`?? ${mutationPath}`);
+    expect(mutationReport).not.toContain("No unexpected repository status entries.");
   });
 });
 
