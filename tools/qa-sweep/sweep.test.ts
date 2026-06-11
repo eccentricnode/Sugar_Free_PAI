@@ -205,7 +205,23 @@ describe("QA sweep run-set capture", () => {
     expect(mutationReport).toContain("## Expected harness-owned outputs");
     expect(mutationReport).toContain("run-01.md");
     expect(mutationReport).toContain("manifest.csv");
+    expect(mutationReport).toContain("sweep-summary.md");
     expect(mutationReport).toContain("No unexpected repository status entries.");
+
+    const summary = readFileSync(join(runSetDir, "sweep-summary.md"), "utf8");
+    expect(summary).toContain("# QA Sweep Summary");
+    expect(summary).toContain(`- run_set_id: ${runSetId}`);
+    expect(summary).toContain("- requested_count: 5");
+    expect(summary).toContain(
+      "- manifest: " +
+        join("skills", skillName, "test-results", "runs", runSetId, "manifest.csv"),
+    );
+    expect(summary).toContain(
+      "- tracking_log: " + join("skills", skillName, "test-results", "log.csv"),
+    );
+    expect(summary).toContain("- final_status: pass");
+    expect(summary).toContain("- invocations: pass");
+    expect(summary).toContain("- repository_mutations: pass");
   });
 
   test("failed invocation is captured but does not stop later runs", () => {
@@ -245,6 +261,10 @@ describe("QA sweep run-set capture", () => {
     expect(failedRun).toContain("exit_status: 17");
     expect(failedRun).toContain("fake pi invocation: 2");
     expect(failedRun).toContain("fake pi failure on invocation 2");
+
+    const summary = readFileSync(join(runSetDir, "sweep-summary.md"), "utf8");
+    expect(summary).toContain("- final_status: fail");
+    expect(summary).toContain("- invocations: fail");
 
     const laterRun = readFileSync(join(runSetDir, "run-03.md"), "utf8");
     expect(laterRun).toContain("exit_status: 0");

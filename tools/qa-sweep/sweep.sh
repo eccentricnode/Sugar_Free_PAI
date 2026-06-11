@@ -89,6 +89,7 @@ ARTIFACTS_DIR="$RUN_SET_DIR/artifacts"
 EXPECTED_ARTIFACT_PATHS="$RUN_SET_DIR/expected-artifact-paths.txt"
 MISSING_ARTIFACT_PATHS="$RUN_SET_DIR/missing-artifact-paths.txt"
 MUTATION_REPORT="$RUN_SET_DIR/repository-mutation-report.md"
+SUMMARY_REPORT="$RUN_SET_DIR/sweep-summary.md"
 REPOSITORY_STATUS_BEFORE="$RUN_SET_DIR/repository-status-before.txt"
 REPOSITORY_STATUS_AFTER="$RUN_SET_DIR/repository-status-after.txt"
 REPOSITORY_STATUS_NEW="$RUN_SET_DIR/repository-status-new.txt"
@@ -334,6 +335,51 @@ render_artifact_report() {
   } > "$ARTIFACT_REPORT"
 }
 
+gate_status() {
+  local failed="$1"
+  if [ "$failed" -eq 0 ]; then
+    printf 'pass\n'
+  else
+    printf 'fail\n'
+  fi
+}
+
+render_sweep_summary() {
+  local final_status="$1"
+  local mutation_status
+
+  if [ "$final_status" = "pending" ]; then
+    mutation_status="pending"
+  else
+    mutation_status="$(gate_status "$MUTATION_FAILED")"
+  fi
+
+  {
+    printf '# QA Sweep Summary\n\n'
+    printf -- '- run_set_id: %s\n' "$RUN_SET_ID"
+    printf -- '- skill: %s\n' "$SKILL"
+    printf -- '- requested_count: %s\n' "$COUNT"
+    printf -- '- provider: %s\n' "$PROVIDER"
+    printf -- '- model: %s\n' "$MODEL"
+    printf -- '- branch: %s\n' "$BRANCH"
+    printf -- '- head: %s\n' "$HEAD_REV"
+    printf -- '- manifest: %s\n' "$MANIFEST"
+    printf -- '- artifact_report: %s\n' "$ARTIFACT_REPORT"
+    printf -- '- repository_mutation_report: %s\n' "$MUTATION_REPORT"
+    printf -- '- tracking_log: %s\n' "$LOG_FILE"
+    printf -- '- final_status: %s\n' "$final_status"
+
+    printf '\n## Gate status\n\n'
+    printf -- '- invocations: %s\n' "$(gate_status "$SWEEP_FAILED")"
+    printf -- '- tracking_log: %s\n' "$(gate_status "$LOG_FAILED")"
+    printf -- '- artifacts: %s\n' "$(gate_status "$ARTIFACT_FAILED")"
+    printf -- '- repository_mutations: %s\n' "$mutation_status"
+
+    printf '\n## Run files\n\n'
+    find "$RUN_SET_DIR" -maxdepth 1 -type f -name 'run-*.md' | sort | sed 's/^/- /'
+  } > "$SUMMARY_REPORT"
+}
+
 capture_repository_status() {
   git status --porcelain=v1 --untracked-files=all 2>/dev/null || true
 }
@@ -529,6 +575,7 @@ render_artifact_report
 
 mapfile -t TRACKING_FIELDS < <(extract_tracking_fields)
 append_tracking_row "${TRACKING_FIELDS[@]}" || LOG_FAILED=1
+render_sweep_summary "pending"
 write_repository_mutation_report || MUTATION_FAILED=1
 
 FINAL_FAILED=0
@@ -551,6 +598,12 @@ fi
 if [ "$MUTATION_FAILED" -ne 0 ]; then
   echo "[$(date +%H:%M:%S)] sweep failed: unexpected repository mutations detected (skill=$SKILL run_set=$RUN_SET_ID)" >&2
   FINAL_FAILED=1
+fi
+
+if [ "$FINAL_FAILED" -ne 0 ]; then
+  render_sweep_summary "fail"
+else
+  render_sweep_summary "pass"
 fi
 
 if [ "$FINAL_FAILED" -ne 0 ]; then
