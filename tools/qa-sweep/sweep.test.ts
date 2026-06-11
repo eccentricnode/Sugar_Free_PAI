@@ -47,16 +47,29 @@ function createDisposableSkill(name: string): string {
   return skillDir;
 }
 
-function createFakePi(): string {
+function createFakePi(options: { failOnInvocation?: number } = {}): string {
   const tempDir = mkdtempSync(join(tmpdir(), "pai-lite-qa-sweep-"));
   createdTempDirs.push(tempDir);
   const fakePi = join(tempDir, "pi");
+  const countFile = join(tempDir, "count");
+  const failOnInvocation = options.failOnInvocation ?? 0;
   writeFileSync(
     fakePi,
     [
       "#!/usr/bin/env bash",
+      `COUNT_FILE=${JSON.stringify(countFile)}`,
+      `FAIL_ON_INVOCATION=${failOnInvocation}`,
+      "COUNT=0",
+      "[ -f \"$COUNT_FILE\" ] && COUNT=$(cat \"$COUNT_FILE\")",
+      "COUNT=$((COUNT + 1))",
+      "printf '%s\\n' \"$COUNT\" > \"$COUNT_FILE\"",
       "printf 'fake pi args: %s\\n' \"$*\"",
+      "printf 'fake pi invocation: %s\\n' \"$COUNT\"",
       "printf 'fake pi prompt: %s\\n' \"${@: -1}\"",
+      "if [ \"$COUNT\" -eq \"$FAIL_ON_INVOCATION\" ]; then",
+      "  printf 'fake pi failure on invocation %s\\n' \"$COUNT\" >&2",
+      "  exit 17",
+      "fi",
     ].join("\n"),
     { mode: 0o755 },
   );
@@ -120,9 +133,52 @@ describe("QA sweep run-set capture", () => {
     expect(runBody).toContain("provider: openai-codex");
     expect(runBody).toContain("model: gpt-5.5");
     expect(runBody).toContain("invocation_mode: pi -p --no-session --no-context-files");
-    expect(runBody).toContain("exit_status: pending");
+    expect(runBody).toContain("exit_status: 0");
     expect(runBody).toContain("## Raw model output");
     expect(runBody).toContain("fake pi prompt: Use this fixture exactly.");
+  });
+
+  test("failed invocation is captured but does not stop later runs", () => {
+    const skillName = `qa-sweep-failure-test-${process.pid}`;
+    createDisposableSkill(skillName);
+    const fakePiDir = createFakePi({ failOnInvocation: 2 });
+
+    const result = spawnSync("bash", ["_qa-sweep.sh", skillName, "3"], {
+      cwd: repoRoot,
+      env: {
+        ...process.env,
+        PATH: `${fakePiDir}:${process.env.PATH ?? ""}`,
+      },
+      encoding: "utf8",
+    });
+
+    expect(result.status).toBe(1);
+
+    const runsRoot = join(repoRoot, "skills", skillName, "test-results", "runs");
+    const runSets = readdirSorted(runsRoot);
+    expect(runSets).toHaveLength(1);
+
+    const runSetDir = join(runsRoot, runSets[0]);
+    const runFiles = readdirSorted(runSetDir).filter((name) =>
+      /^run-\d\d\.md$/.test(name),
+    );
+    expect(runFiles).toEqual(["run-01.md", "run-02.md", "run-03.md"]);
+
+    const manifest = readFileSync(join(runSetDir, "manifest.csv"), "utf8");
+    const manifestRows = manifest.trimEnd().split("\n").slice(1);
+    expect(manifestRows).toHaveLength(3);
+    expect(manifestRows[0].endsWith(',"0"')).toBe(true);
+    expect(manifestRows[1].endsWith(',"17"')).toBe(true);
+    expect(manifestRows[2].endsWith(',"0"')).toBe(true);
+
+    const failedRun = readFileSync(join(runSetDir, "run-02.md"), "utf8");
+    expect(failedRun).toContain("exit_status: 17");
+    expect(failedRun).toContain("fake pi invocation: 2");
+    expect(failedRun).toContain("fake pi failure on invocation 2");
+
+    const laterRun = readFileSync(join(runSetDir, "run-03.md"), "utf8");
+    expect(laterRun).toContain("exit_status: 0");
+    expect(laterRun).toContain("fake pi invocation: 3");
   });
 });
 

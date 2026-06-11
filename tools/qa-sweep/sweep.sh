@@ -92,25 +92,12 @@ csv_row() {
 echo "[$(date +%H:%M:%S)] sweep starting: skill=$SKILL count=$COUNT run_set=$RUN_SET_ID"
 echo "[fixture preview] $(echo "$FIXTURE" | head -1 | cut -c1-100)..."
 
+SWEEP_FAILED=0
+
 for N in $(seq 1 "$COUNT"); do
   NN=$(printf "%02d" "$N")
   OUT="$RUN_SET_DIR/run-${NN}.md"
   TIMESTAMP_UTC="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-
-  csv_row \
-    "$RUN_SET_ID" \
-    "$SKILL" \
-    "$FIXTURE_FILE" \
-    "$N" \
-    "$COUNT" \
-    "$TIMESTAMP_UTC" \
-    "$PROVIDER" \
-    "$MODEL" \
-    "$BRANCH" \
-    "$HEAD_REV" \
-    "$INVOCATION_MODE" \
-    "$OUT" \
-    "pending" >> "$MANIFEST"
 
   {
     printf -- '---\n'
@@ -143,8 +130,33 @@ for N in $(seq 1 "$COUNT"); do
     "$FIXTURE" \
     >> "$OUT" 2>&1
   RC=$?
+  if [ "$RC" -ne 0 ]; then
+    SWEEP_FAILED=1
+  fi
+
+  perl -0pi -e "s/exit_status: pending/exit_status: $RC/" "$OUT"
+  csv_row \
+    "$RUN_SET_ID" \
+    "$SKILL" \
+    "$FIXTURE_FILE" \
+    "$N" \
+    "$COUNT" \
+    "$TIMESTAMP_UTC" \
+    "$PROVIDER" \
+    "$MODEL" \
+    "$BRANCH" \
+    "$HEAD_REV" \
+    "$INVOCATION_MODE" \
+    "$OUT" \
+    "$RC" >> "$MANIFEST"
+
   LINES=$(wc -l < "$OUT")
   echo "[$(date +%H:%M:%S)] run-${NN} exit=$RC lines=$LINES"
 done
+
+if [ "$SWEEP_FAILED" -ne 0 ]; then
+  echo "[$(date +%H:%M:%S)] sweep failed: one or more invocations exited nonzero (skill=$SKILL run_set=$RUN_SET_ID)" >&2
+  exit "$SWEEP_FAILED"
+fi
 
 echo "[$(date +%H:%M:%S)] sweep complete: skill=$SKILL run_set=$RUN_SET_ID"
