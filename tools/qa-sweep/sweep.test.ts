@@ -14,8 +14,12 @@ import { spawnSync } from "child_process";
 const repoRoot = resolve(import.meta.dir, "../..");
 const createdSkillDirs: string[] = [];
 const createdTempDirs: string[] = [];
+const createdRepoFiles: string[] = [];
 
 afterEach(() => {
+  for (const repoFile of createdRepoFiles.splice(0)) {
+    rmSync(repoFile, { force: true });
+  }
   for (const skillDir of createdSkillDirs.splice(0)) {
     rmSync(skillDir, { force: true, recursive: true });
   }
@@ -63,18 +67,31 @@ function createDisposableSkill(name: string): string {
   return skillDir;
 }
 
-function createFakePi(options: { failOnInvocation?: number } = {}): string {
+function createFakePi(
+  options: {
+    artifactContent?: string;
+    artifactPath?: string;
+    failOnInvocation?: number;
+    printedArtifactPath?: string;
+  } = {},
+): string {
   const tempDir = mkdtempSync(join(tmpdir(), "pai-lite-qa-sweep-"));
   createdTempDirs.push(tempDir);
   const fakePi = join(tempDir, "pi");
   const countFile = join(tempDir, "count");
   const failOnInvocation = options.failOnInvocation ?? 0;
+  const artifactPath = options.artifactPath ?? "";
+  const artifactContent = options.artifactContent ?? "";
+  const printedArtifactPath = options.printedArtifactPath ?? "";
   writeFileSync(
     fakePi,
     [
       "#!/usr/bin/env bash",
       `COUNT_FILE=${JSON.stringify(countFile)}`,
       `FAIL_ON_INVOCATION=${failOnInvocation}`,
+      `ARTIFACT_PATH=${JSON.stringify(artifactPath)}`,
+      `ARTIFACT_CONTENT=${JSON.stringify(artifactContent)}`,
+      `PRINTED_ARTIFACT_PATH=${JSON.stringify(printedArtifactPath)}`,
       "COUNT=0",
       "[ -f \"$COUNT_FILE\" ] && COUNT=$(cat \"$COUNT_FILE\")",
       "COUNT=$((COUNT + 1))",
@@ -82,6 +99,14 @@ function createFakePi(options: { failOnInvocation?: number } = {}): string {
       "printf 'fake pi args: %s\\n' \"$*\"",
       "printf 'fake pi invocation: %s\\n' \"$COUNT\"",
       "printf 'fake pi prompt: %s\\n' \"${@: -1}\"",
+      "if [ -n \"$ARTIFACT_PATH\" ]; then",
+      "  mkdir -p \"$(dirname \"$ARTIFACT_PATH\")\"",
+      "  printf '%s\\n' \"$ARTIFACT_CONTENT\" > \"$ARTIFACT_PATH\"",
+      "  printf 'Created artifact: %s\\n' \"$ARTIFACT_PATH\"",
+      "fi",
+      "if [ -n \"$PRINTED_ARTIFACT_PATH\" ]; then",
+      "  printf 'Created artifact: %s\\n' \"$PRINTED_ARTIFACT_PATH\"",
+      "fi",
       "if [ \"$COUNT\" -eq \"$FAIL_ON_INVOCATION\" ]; then",
       "  printf 'fake pi failure on invocation %s\\n' \"$COUNT\" >&2",
       "  exit 17",
@@ -252,10 +277,106 @@ describe("QA sweep run-set capture", () => {
       logLines.filter((line) => line.includes(`run_set_id=${fixedRunSetId}`)),
     ).toHaveLength(1);
   });
+
+  test("present named artifact is captured as run-set evidence", () => {
+    const skillName = `qa-sweep-artifact-test-${process.pid}`;
+    createDisposableSkill(skillName);
+    const artifactPath = `work/handoffs/qa-sweep-artifact-${process.pid}.md`;
+    createdRepoFiles.push(join(repoRoot, artifactPath));
+    const fakePiDir = createFakePi({
+      artifactPath,
+      artifactContent: [
+        "artifact_type: frozen_handoff",
+        "objective: prove artifact body is captured",
+        "destination: " + artifactPath,
+      ].join("\n"),
+    });
+
+    const result = spawnSync("bash", ["_qa-sweep.sh", skillName, "1"], {
+      cwd: repoRoot,
+      env: {
+        ...process.env,
+        PATH: `${fakePiDir}:${process.env.PATH ?? ""}`,
+      },
+      encoding: "utf8",
+    });
+
+    expect(result.status).toBe(0);
+
+    const runSetDir = onlyRunSetDir(skillName);
+    const artifactManifest = readFileSync(
+      join(runSetDir, "artifact-manifest.csv"),
+      "utf8",
+    );
+    expect(artifactManifest).toContain(artifactPath);
+    expect(artifactManifest).toContain(',"present",');
+
+    const artifactReport = readFileSync(join(runSetDir, "artifact-report.md"), "utf8");
+    expect(artifactReport).toContain("- " + artifactPath);
+    expect(artifactReport).toContain("No missing artifact paths detected.");
+
+    const evidenceDir = join(runSetDir, "artifacts", "run-01");
+    const evidenceFiles = readdirSorted(evidenceDir);
+    expect(evidenceFiles).toHaveLength(1);
+    const evidence = readFileSync(join(evidenceDir, evidenceFiles[0]), "utf8");
+    expect(evidence).toContain("status: present");
+    expect(evidence).toContain("artifact_type: frozen_handoff");
+    expect(evidence).toContain("objective: prove artifact body is captured");
+
+    const runOutput = readFileSync(join(runSetDir, "run-01.md"), "utf8");
+    expect(runOutput).toContain("Created artifact: " + artifactPath);
+    expect(runOutput).not.toContain("artifact_type: frozen_handoff");
+  });
+
+  test("missing named artifact is recorded and fails the sweep", () => {
+    const skillName = `qa-sweep-missing-artifact-test-${process.pid}`;
+    createDisposableSkill(skillName);
+    const artifactPath = `work/handoffs/qa-sweep-missing-${process.pid}.md`;
+    const fakePiDir = createFakePi({ printedArtifactPath: artifactPath });
+
+    const result = spawnSync("bash", ["_qa-sweep.sh", skillName, "1"], {
+      cwd: repoRoot,
+      env: {
+        ...process.env,
+        PATH: `${fakePiDir}:${process.env.PATH ?? ""}`,
+      },
+      encoding: "utf8",
+    });
+
+    expect(result.status).toBe(1);
+
+    const runSetDir = onlyRunSetDir(skillName);
+    const artifactManifest = readFileSync(
+      join(runSetDir, "artifact-manifest.csv"),
+      "utf8",
+    );
+    expect(artifactManifest).toContain(artifactPath);
+    expect(artifactManifest).toContain(',"missing",');
+
+    const artifactReport = readFileSync(join(runSetDir, "artifact-report.md"), "utf8");
+    expect(artifactReport).toContain("## Expected artifact paths");
+    expect(artifactReport).toContain("- " + artifactPath);
+    expect(artifactReport).toContain("## Missing artifact paths");
+    expect(artifactReport).toContain("- " + artifactPath);
+
+    const evidenceDir = join(runSetDir, "artifacts", "run-01");
+    const evidenceFiles = readdirSorted(evidenceDir);
+    expect(evidenceFiles).toHaveLength(1);
+    const evidence = readFileSync(join(evidenceDir, evidenceFiles[0]), "utf8");
+    expect(evidence).toContain("# Missing Artifact");
+    expect(evidence).toContain("status: missing");
+  });
 });
 
 function readdirSorted(path: string): string[] {
   return readdirSync(path).sort((a, b) => basename(a).localeCompare(basename(b)));
+}
+
+function onlyRunSetDir(skillName: string): string {
+  const runsRoot = join(repoRoot, "skills", skillName, "test-results", "runs");
+  const runSets = readdirSorted(runsRoot);
+  expect(runSets).toHaveLength(1);
+  return join(runsRoot, runSets[0]);
 }
 
 function parseCsvRow(row: string): string[] {

@@ -82,6 +82,11 @@ RUN_SET_DIR="$RUNS_DIR/$RUN_SET_ID"
 mkdir -p "$RUN_SET_DIR"
 
 MANIFEST="$RUN_SET_DIR/manifest.csv"
+ARTIFACT_MANIFEST="$RUN_SET_DIR/artifact-manifest.csv"
+ARTIFACT_REPORT="$RUN_SET_DIR/artifact-report.md"
+ARTIFACTS_DIR="$RUN_SET_DIR/artifacts"
+EXPECTED_ARTIFACT_PATHS="$RUN_SET_DIR/expected-artifact-paths.txt"
+MISSING_ARTIFACT_PATHS="$RUN_SET_DIR/missing-artifact-paths.txt"
 BRANCH="$(git branch --show-current 2>/dev/null || true)"
 [ -z "$BRANCH" ] && BRANCH="detached"
 HEAD_REV="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
@@ -199,15 +204,145 @@ append_tracking_row() {
   echo "[$(date +%H:%M:%S)] tracking row appended: $LOG_FILE"
 }
 
+extract_named_artifact_paths() {
+  local source_file="$1"
+
+  grep -Eoh '(\./)?work/(handoffs|audit)/[A-Za-z0-9._/-]+\.(md|markdown|txt|json|yaml|yml)' "$source_file" \
+    | sed 's#^\./##' \
+    | sort -u
+}
+
+sanitize_artifact_path() {
+  local artifact_path="$1"
+  printf '%s' "$artifact_path" | sed 's#[^A-Za-z0-9._-]#_#g'
+}
+
+write_present_artifact_evidence() {
+  local run_number="$1"
+  local artifact_path="$2"
+  local evidence_file="$3"
+
+  {
+    printf '# Artifact Evidence\n\n'
+    printf -- '- run_set_id: %s\n' "$RUN_SET_ID"
+    printf -- '- skill: %s\n' "$SKILL"
+    printf -- '- run_number: %s\n' "$run_number"
+    printf -- '- artifact_path: %s\n' "$artifact_path"
+    printf -- '- status: present\n'
+    printf '\n## Artifact content\n\n'
+    printf '```text\n'
+    cat "$artifact_path"
+    printf '\n```\n'
+  } > "$evidence_file"
+}
+
+write_missing_artifact_evidence() {
+  local run_number="$1"
+  local artifact_path="$2"
+  local evidence_file="$3"
+
+  {
+    printf '# Missing Artifact\n\n'
+    printf -- '- run_set_id: %s\n' "$RUN_SET_ID"
+    printf -- '- skill: %s\n' "$SKILL"
+    printf -- '- run_number: %s\n' "$run_number"
+    printf -- '- artifact_path: %s\n' "$artifact_path"
+    printf -- '- status: missing\n'
+  } > "$evidence_file"
+}
+
+record_artifacts_for_run() {
+  local run_number="$1"
+  local run_label="$2"
+  local run_file="$3"
+  local artifact_path sanitized evidence_dir evidence_file status
+  local failed=0
+  local artifact_paths=()
+
+  mapfile -t artifact_paths < <(extract_named_artifact_paths "$run_file")
+  if [ "${#artifact_paths[@]}" -eq 0 ]; then
+    return 0
+  fi
+
+  evidence_dir="$ARTIFACTS_DIR/run-${run_label}"
+  mkdir -p "$evidence_dir"
+
+  for artifact_path in "${artifact_paths[@]}"; do
+    printf '%s\n' "$artifact_path" >> "$EXPECTED_ARTIFACT_PATHS"
+    sanitized="$(sanitize_artifact_path "$artifact_path")"
+
+    if [ -f "$artifact_path" ]; then
+      status="present"
+      evidence_file="$evidence_dir/${sanitized}.evidence.md"
+      write_present_artifact_evidence "$run_number" "$artifact_path" "$evidence_file"
+    else
+      status="missing"
+      failed=1
+      printf '%s\n' "$artifact_path" >> "$MISSING_ARTIFACT_PATHS"
+      evidence_file="$evidence_dir/${sanitized}.missing.md"
+      write_missing_artifact_evidence "$run_number" "$artifact_path" "$evidence_file"
+    fi
+
+    csv_row \
+      "$RUN_SET_ID" \
+      "$SKILL" \
+      "$run_number" \
+      "$run_file" \
+      "$artifact_path" \
+      "$status" \
+      "$evidence_file" >> "$ARTIFACT_MANIFEST"
+  done
+
+  return "$failed"
+}
+
+render_artifact_report() {
+  {
+    printf '# Artifact Report\n\n'
+    printf -- '- run_set_id: %s\n' "$RUN_SET_ID"
+    printf -- '- skill: %s\n' "$SKILL"
+    printf -- '- artifact_manifest: %s\n' "$ARTIFACT_MANIFEST"
+    printf -- '- artifact_evidence_dir: %s\n' "$ARTIFACTS_DIR"
+
+    printf '\n## Expected artifact paths\n\n'
+    if [ -s "$EXPECTED_ARTIFACT_PATHS" ]; then
+      sort -u "$EXPECTED_ARTIFACT_PATHS" | sed 's/^/- /'
+    else
+      printf 'No named artifact paths detected.\n'
+    fi
+
+    printf '\n## Missing artifact paths\n\n'
+    if [ -s "$MISSING_ARTIFACT_PATHS" ]; then
+      sort -u "$MISSING_ARTIFACT_PATHS" | sed 's/^/- /'
+    else
+      printf 'No missing artifact paths detected.\n'
+    fi
+
+    printf '\n## Evidence records\n\n'
+    if [ -s "$ARTIFACT_MANIFEST" ] && [ "$(wc -l < "$ARTIFACT_MANIFEST")" -gt 1 ]; then
+      printf 'See `%s` and `%s/` for per-run artifact status and captured content.\n' "$ARTIFACT_MANIFEST" "$ARTIFACTS_DIR"
+    else
+      printf 'No artifact evidence records were created.\n'
+    fi
+  } > "$ARTIFACT_REPORT"
+}
+
 {
   printf 'run_set_id,skill,fixture_path,run_number,requested_count,timestamp_utc,provider,model,branch,head,invocation_mode,run_file,exit_status\n'
 } > "$MANIFEST"
+
+{
+  printf 'run_set_id,skill,run_number,run_file,artifact_path,status,evidence_file\n'
+} > "$ARTIFACT_MANIFEST"
+: > "$EXPECTED_ARTIFACT_PATHS"
+: > "$MISSING_ARTIFACT_PATHS"
 
 echo "[$(date +%H:%M:%S)] sweep starting: skill=$SKILL count=$COUNT run_set=$RUN_SET_ID"
 echo "[fixture preview] $(echo "$FIXTURE" | head -1 | cut -c1-100)..."
 
 SWEEP_FAILED=0
 LOG_FAILED=0
+ARTIFACT_FAILED=0
 
 for N in $(seq 1 "$COUNT"); do
   NN=$(printf "%02d" "$N")
@@ -267,19 +402,38 @@ for N in $(seq 1 "$COUNT"); do
 
   LINES=$(wc -l < "$OUT")
   echo "[$(date +%H:%M:%S)] run-${NN} exit=$RC lines=$LINES"
+
+  if record_artifacts_for_run "$N" "$NN" "$OUT"; then
+    :
+  else
+    ARTIFACT_FAILED=1
+  fi
 done
+
+render_artifact_report
 
 mapfile -t TRACKING_FIELDS < <(extract_tracking_fields)
 append_tracking_row "${TRACKING_FIELDS[@]}" || LOG_FAILED=1
 
+FINAL_FAILED=0
+
 if [ "$SWEEP_FAILED" -ne 0 ]; then
   echo "[$(date +%H:%M:%S)] sweep failed: one or more invocations exited nonzero (skill=$SKILL run_set=$RUN_SET_ID)" >&2
-  exit "$SWEEP_FAILED"
+  FINAL_FAILED=1
 fi
 
 if [ "$LOG_FAILED" -ne 0 ]; then
   echo "[$(date +%H:%M:%S)] sweep failed: tracking row could not be recorded (skill=$SKILL run_set=$RUN_SET_ID)" >&2
-  exit "$LOG_FAILED"
+  FINAL_FAILED=1
+fi
+
+if [ "$ARTIFACT_FAILED" -ne 0 ]; then
+  echo "[$(date +%H:%M:%S)] sweep failed: one or more named artifacts were missing (skill=$SKILL run_set=$RUN_SET_ID)" >&2
+  FINAL_FAILED=1
+fi
+
+if [ "$FINAL_FAILED" -ne 0 ]; then
+  exit "$FINAL_FAILED"
 fi
 
 echo "[$(date +%H:%M:%S)] sweep complete: skill=$SKILL run_set=$RUN_SET_ID"
