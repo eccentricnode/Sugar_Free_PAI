@@ -35,6 +35,7 @@ SKILL_DIR="skills/$SKILL"
 FIXTURE_FILE="$SKILL_DIR/test-fixture.md"
 RESULTS_DIR="$SKILL_DIR/test-results"
 RUNS_DIR="$RESULTS_DIR/runs"
+LOG_FILE="$RESULTS_DIR/log.csv"
 
 [ ! -d "$SKILL_DIR" ] && { echo "skill not found: $SKILL_DIR" >&2; exit 1; }
 [ ! -f "$SKILL_DIR/blueprint.yaml" ] && { echo "no blueprint.yaml - skipping" >&2; exit 1; }
@@ -56,13 +57,27 @@ if [ -z "$FIXTURE" ]; then
   exit 1
 fi
 
-RUN_SET_ID_BASE="$(date -u +%Y%m%dT%H%M%SZ)"
-RUN_SET_ID="$RUN_SET_ID_BASE"
-SUFFIX=1
-while [ -e "$RUNS_DIR/$RUN_SET_ID" ]; do
-  SUFFIX=$((SUFFIX + 1))
-  RUN_SET_ID="$RUN_SET_ID_BASE-$SUFFIX"
-done
+if [ -n "${PAILITE_QA_SWEEP_RUN_SET_ID:-}" ]; then
+  RUN_SET_ID="$PAILITE_QA_SWEEP_RUN_SET_ID"
+  case "$RUN_SET_ID" in
+    *[!A-Za-z0-9._-]*)
+      echo "PAILITE_QA_SWEEP_RUN_SET_ID contains unsupported characters: $RUN_SET_ID" >&2
+      exit 2
+      ;;
+  esac
+  if [ -e "$RUNS_DIR/$RUN_SET_ID" ]; then
+    echo "run set already exists: $RUNS_DIR/$RUN_SET_ID" >&2
+    exit 1
+  fi
+else
+  RUN_SET_ID_BASE="$(date -u +%Y%m%dT%H%M%SZ)"
+  RUN_SET_ID="$RUN_SET_ID_BASE"
+  SUFFIX=1
+  while [ -e "$RUNS_DIR/$RUN_SET_ID" ]; do
+    SUFFIX=$((SUFFIX + 1))
+    RUN_SET_ID="$RUN_SET_ID_BASE-$SUFFIX"
+  done
+fi
 RUN_SET_DIR="$RUNS_DIR/$RUN_SET_ID"
 mkdir -p "$RUN_SET_DIR"
 
@@ -85,6 +100,105 @@ csv_row() {
   printf '\n'
 }
 
+extract_tracking_fields() {
+  awk '
+    /^## Long-term tracking/ { in_section = 1; next }
+    in_section && /^## / { exit }
+    in_section && /^- / {
+      field = $0
+      sub(/^- /, "", field)
+      sub(/[[:space:]]*\(.*/, "", field)
+      sub(/[[:space:]]*:.*/, "", field)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", field)
+      if (field != "") print field
+    }
+  ' "$FIXTURE_FILE"
+}
+
+join_by_comma() {
+  local first=1
+  local value
+  for value in "$@"; do
+    if [ "$first" -eq 0 ]; then
+      printf ','
+    fi
+    printf '%s' "$value"
+    first=0
+  done
+}
+
+tracking_value_for_field() {
+  local field="$1"
+  case "$field" in
+    date)
+      date -u +%Y-%m-%d
+      ;;
+    branch)
+      printf '%s\n' "$BRANCH"
+      ;;
+    head|revision|head_rev)
+      printf '%s\n' "$HEAD_REV"
+      ;;
+    run_set_id)
+      printf '%s\n' "$RUN_SET_ID"
+      ;;
+    model)
+      printf '%s\n' "$MODEL"
+      ;;
+    runs_count)
+      printf '%s\n' "$COUNT"
+      ;;
+    *notes)
+      printf 'unscored; run_set_id=%s; head=%s\n' "$RUN_SET_ID" "$HEAD_REV"
+      ;;
+    *_rate)
+      printf 'unscored\n'
+      ;;
+    *)
+      printf 'unscored\n'
+      ;;
+  esac
+}
+
+append_tracking_row() {
+  local fields=("$@")
+  local expected_header existing_header values=()
+  local field value
+
+  if [ "${#fields[@]}" -eq 0 ]; then
+    echo "could not extract long-term tracking fields from $FIXTURE_FILE" >&2
+    return 1
+  fi
+
+  expected_header="$(join_by_comma "${fields[@]}")"
+
+  if [ -f "$LOG_FILE" ] && [ -s "$LOG_FILE" ]; then
+    existing_header="$(head -n 1 "$LOG_FILE")"
+    if [ "$existing_header" != "$expected_header" ]; then
+      echo "log header mismatch for $LOG_FILE" >&2
+      echo "expected: $expected_header" >&2
+      echo "actual:   $existing_header" >&2
+      return 1
+    fi
+  else
+    mkdir -p "$RESULTS_DIR"
+    printf '%s\n' "$expected_header" > "$LOG_FILE"
+  fi
+
+  if grep -Fq "$RUN_SET_ID" "$LOG_FILE"; then
+    echo "[$(date +%H:%M:%S)] tracking row already present for run_set=$RUN_SET_ID"
+    return 0
+  fi
+
+  for field in "${fields[@]}"; do
+    value="$(tracking_value_for_field "$field")"
+    values+=("$value")
+  done
+
+  csv_row "${values[@]}" >> "$LOG_FILE"
+  echo "[$(date +%H:%M:%S)] tracking row appended: $LOG_FILE"
+}
+
 {
   printf 'run_set_id,skill,fixture_path,run_number,requested_count,timestamp_utc,provider,model,branch,head,invocation_mode,run_file,exit_status\n'
 } > "$MANIFEST"
@@ -93,6 +207,7 @@ echo "[$(date +%H:%M:%S)] sweep starting: skill=$SKILL count=$COUNT run_set=$RUN
 echo "[fixture preview] $(echo "$FIXTURE" | head -1 | cut -c1-100)..."
 
 SWEEP_FAILED=0
+LOG_FAILED=0
 
 for N in $(seq 1 "$COUNT"); do
   NN=$(printf "%02d" "$N")
@@ -154,9 +269,17 @@ for N in $(seq 1 "$COUNT"); do
   echo "[$(date +%H:%M:%S)] run-${NN} exit=$RC lines=$LINES"
 done
 
+mapfile -t TRACKING_FIELDS < <(extract_tracking_fields)
+append_tracking_row "${TRACKING_FIELDS[@]}" || LOG_FAILED=1
+
 if [ "$SWEEP_FAILED" -ne 0 ]; then
   echo "[$(date +%H:%M:%S)] sweep failed: one or more invocations exited nonzero (skill=$SKILL run_set=$RUN_SET_ID)" >&2
   exit "$SWEEP_FAILED"
+fi
+
+if [ "$LOG_FAILED" -ne 0 ]; then
+  echo "[$(date +%H:%M:%S)] sweep failed: tracking row could not be recorded (skill=$SKILL run_set=$RUN_SET_ID)" >&2
+  exit "$LOG_FAILED"
 fi
 
 echo "[$(date +%H:%M:%S)] sweep complete: skill=$SKILL run_set=$RUN_SET_ID"

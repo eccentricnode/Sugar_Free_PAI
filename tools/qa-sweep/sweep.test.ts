@@ -42,7 +42,23 @@ function createDisposableSkill(name: string): string {
       "Use this fixture exactly.",
       "```",
       "",
+      "## Long-term tracking",
+      "",
+      "Append a row to `skills/" + name + "/test-results/log.csv` after each set of runs with:",
+      "",
+      "- date",
+      "- branch (semantic-blueprint / baseline)",
+      "- model (pi.dev's underlying model and version)",
+      "- runs_count",
+      "- section_presence_rate",
+      "- shape_variance_notes",
+      "",
     ].join("\n"),
+  );
+  mkdirSync(join(skillDir, "test-results"), { recursive: true });
+  writeFileSync(
+    join(skillDir, "test-results", "log.csv"),
+    "date,branch,model,runs_count,section_presence_rate,shape_variance_notes\n",
   );
   return skillDir;
 }
@@ -123,6 +139,7 @@ describe("QA sweep run-set capture", () => {
     const manifestRows = manifest.trimEnd().split("\n").slice(1);
     expect(manifestRows).toHaveLength(5);
     expect(manifestRows.every((row) => row.startsWith(`"${runSetId}",`))).toBe(true);
+    const firstManifestRow = parseCsvRow(manifestRows[0]);
 
     const runBody = readFileSync(join(runSetDir, "run-01.md"), "utf8");
     expect(runBody).toContain("run_set_id: " + runSetId);
@@ -136,6 +153,20 @@ describe("QA sweep run-set capture", () => {
     expect(runBody).toContain("exit_status: 0");
     expect(runBody).toContain("## Raw model output");
     expect(runBody).toContain("fake pi prompt: Use this fixture exactly.");
+
+    const log = readFileSync(join(skillDir, "test-results", "log.csv"), "utf8");
+    const logLines = log.trimEnd().split("\n");
+    expect(logLines).toHaveLength(2);
+    expect(logLines[0]).toBe(
+      "date,branch,model,runs_count,section_presence_rate,shape_variance_notes",
+    );
+    const logRow = parseCsvRow(logLines[1]);
+    expect(logRow[1]).toBe(firstManifestRow[8]);
+    expect(logRow[2]).toBe(firstManifestRow[7]);
+    expect(logRow[3]).toBe("5");
+    expect(logRow[4]).toBe("unscored");
+    expect(logRow[5]).toContain(`run_set_id=${runSetId}`);
+    expect(logRow[5]).toContain(`head=${firstManifestRow[9]}`);
   });
 
   test("failed invocation is captured but does not stop later runs", () => {
@@ -179,9 +210,59 @@ describe("QA sweep run-set capture", () => {
     const laterRun = readFileSync(join(runSetDir, "run-03.md"), "utf8");
     expect(laterRun).toContain("exit_status: 0");
     expect(laterRun).toContain("fake pi invocation: 3");
+
+    const log = readFileSync(
+      join(repoRoot, "skills", skillName, "test-results", "log.csv"),
+      "utf8",
+    );
+    const logLines = log.trimEnd().split("\n");
+    expect(logLines).toHaveLength(2);
+    expect(parseCsvRow(logLines[1])[5]).toContain(`run_set_id=${runSets[0]}`);
+  });
+
+  test("tracking row append is idempotent for a rechecked run set", () => {
+    const skillName = `qa-sweep-log-idempotent-test-${process.pid}`;
+    const skillDir = createDisposableSkill(skillName);
+    const fakePiDir = createFakePi();
+    const fixedRunSetId = `fixed-run-set-${process.pid}`;
+    const logFile = join(skillDir, "test-results", "log.csv");
+    writeFileSync(
+      logFile,
+      [
+        "date,branch,model,runs_count,section_presence_rate,shape_variance_notes",
+        `"2026-06-11","main","gpt-5.5","1","unscored","unscored; run_set_id=${fixedRunSetId}; head=existing"`,
+        "",
+      ].join("\n"),
+    );
+
+    const result = spawnSync("bash", ["_qa-sweep.sh", skillName, "1"], {
+      cwd: repoRoot,
+      env: {
+        ...process.env,
+        PAILITE_QA_SWEEP_RUN_SET_ID: fixedRunSetId,
+        PATH: `${fakePiDir}:${process.env.PATH ?? ""}`,
+      },
+      encoding: "utf8",
+    });
+
+    expect(result.status).toBe(0);
+    const logLines = readFileSync(logFile, "utf8").trimEnd().split("\n");
+    expect(logLines).toHaveLength(2);
+    expect(
+      logLines.filter((line) => line.includes(`run_set_id=${fixedRunSetId}`)),
+    ).toHaveLength(1);
   });
 });
 
 function readdirSorted(path: string): string[] {
   return readdirSync(path).sort((a, b) => basename(a).localeCompare(basename(b)));
+}
+
+function parseCsvRow(row: string): string[] {
+  expect(row.startsWith('"')).toBe(true);
+  expect(row.endsWith('"')).toBe(true);
+  return row
+    .slice(1, -1)
+    .split('","')
+    .map((value) => value.replaceAll('""', '"'));
 }
