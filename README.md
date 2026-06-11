@@ -1,9 +1,12 @@
-# SUGAR_FREE_PAI
+# pai-lite
 
-> **PAI with the sugar removed** (formerly `pai-lite`). The sugar was the hook
-> pipeline, the classifier daemon, the mode ceremony, the voice, the Pulse
-> daemon — empty calories from a weaker-model era. Same brain (memory, skills,
-> routing, learning), file-first and daemon-free. Tastes the same. No crash.
+> **PAI with the sugar removed**. The sugar was the hook pipeline, the classifier
+> daemon, the mode ceremony, the voice, the Pulse daemon — empty calories from a
+> weaker-model era. Same brain (memory, skills, routing, learning), file-first
+> and daemon-free. Tastes the same. No crash.
+
+The local repo/package identity is `pai-lite`. The GitHub remote slug remains
+`Sugar_Free_PAI` for install URLs and git remotes.
 
 A lighter personal AI infrastructure that runs on **pi.dev** as the substrate.
 
@@ -17,7 +20,7 @@ classifier daemons, mode ceremony, or background services.
 pi install git:github.com/eccentricnode/Sugar_Free_PAI
 ```
 
-This installs SUGAR_FREE_PAI as a [pi package](https://pi.dev/packages):
+This installs `pai-lite` as a [pi package](https://pi.dev/packages):
 
 - The `extensions/blueprint-loader.ts` extension auto-loads, scanning
   `skills/<name>/blueprint.yaml` files on every turn and injecting the

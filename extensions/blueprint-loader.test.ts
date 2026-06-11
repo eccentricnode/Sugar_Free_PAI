@@ -14,7 +14,7 @@ afterEach(() => {
 });
 
 function tempRoot(): string {
-	const d = mkdtempSync(join(tmpdir(), "sfp-bp-"));
+	const d = mkdtempSync(join(tmpdir(), "pailite-bp-"));
 	tmp.push(d);
 	return d;
 }

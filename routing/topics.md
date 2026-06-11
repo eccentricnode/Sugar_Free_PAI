@@ -1,12 +1,15 @@
 # Topic Routes
 
-Updated: 2026-05-26
+Updated: 2026-06-11
 
 Use when: A task names a recurring concept that may map to memory, skills, or
 project context.
 
 ## pai-lite
 
+- Current local repository/path: `active/pai-lite/`.
+- Local package/project identity: `pai-lite`.
+- GitHub/pi install source: `git:github.com/eccentricnode/Sugar_Free_PAI`.
 - Tracked contract: `README.md`
 - Specs: `specs/`
 - Local shape source: `SHAPE.md` when present

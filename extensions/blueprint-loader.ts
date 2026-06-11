@@ -1,5 +1,5 @@
 /**
- * blueprint-loader — SUGAR_FREE_PAI (pai-lite) extension for pi.
+ * blueprint-loader — pai-lite extension for pi.
  *
  * On every agent turn, scans layered `skills/` roots for `blueprint.yaml`
  * sibling files (Rothman semantic blueprint pattern: Level 5 deterministic
@@ -185,7 +185,7 @@ export default function (pi: ExtensionAPI) {
 	pi.on("session_start", (_event, ctx) => {
 		const rendered = refresh(ctx.cwd);
 		if (rendered.text) {
-			ctx.ui.setStatus("blueprints", `SUGAR_FREE_PAI: ${rendered.count} blueprints loaded`);
+			ctx.ui.setStatus("blueprints", `pai-lite: ${rendered.count} blueprints loaded`);
 		} else {
 			ctx.ui.setStatus("blueprints", undefined);
 		}

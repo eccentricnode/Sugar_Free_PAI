@@ -1,8 +1,11 @@
 # Project Memory
 
-Updated: 2026-05-26
+Updated: 2026-06-11
 
 Use when: A task refers to a known project, repository, or ongoing workstream.
 
-Phase 1 starts empty. Add one file per project when continuity would reduce
-future context gathering.
+Add one file per project when continuity would reduce future context gathering.
+
+## Project Files
+
+- `pai-lite.md` — local identity for the current `active/pai-lite/` repository/package.

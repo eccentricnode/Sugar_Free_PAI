@@ -1,20 +1,20 @@
-# SUGAR_FREE_PAI — Memory Convergence (Ralph task)
+# pai-lite — Memory Convergence (Ralph task)
 
 ## The point (plain)
 
-SFPAI must **not own a memory system**. Memory lives in **memory-substrate** — the
+pai-lite must **not own a memory system**. Memory lives in **memory-substrate** — the
 external store (`PI_MEMORY_ROOT`) plus its background **worker**, which *is* the
-subagent that runs against memory instead of the core AI loop. SFPAI **consumes**
+subagent that runs against memory instead of the core AI loop. pai-lite **consumes**
 the substrate's pi-dev adapter. This deletes the duplicate in-repo memory and ends
 the "two memory systems" split.
 
 ## Why
 
-- memory-substrate is the substrate-neutral primitive; SFPAI is one consumer.
+- memory-substrate is the substrate-neutral primitive; pai-lite is one consumer.
   June-2 convergence decision: **subtraction, not glue.**
 - The userspace model (just shipped) says memory is userspace data living
-  *externally*, never in the engine repo. SFPAI's in-repo `memory/` violates it.
-- The substrate worker already IS the subagent-against-memory. SFPAI doesn't
+  *externally*, never in the engine repo. pai-lite's in-repo `memory/` violates it.
+- The substrate worker already IS the subagent-against-memory. pai-lite doesn't
   reimplement memory in the core loop — it just loads the adapter.
 
 ## Out of scope — DO NOT TOUCH
@@ -27,7 +27,7 @@ the "two memory systems" split.
 
 ## Target state
 
-1. No `memory/` tree in SFPAI — deleted.
+1. No `memory/` tree in pai-lite — deleted.
 2. `package.json` `pi.extensions` loads the memory-substrate pi-dev adapter, so
    capture + injection come from its worker (subagent), not from the core loop.
    Wire it the simplest way that actually loads (local path ref or `pi install`);
