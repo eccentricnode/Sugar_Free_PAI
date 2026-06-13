@@ -9,7 +9,6 @@ Use when: A task names or implies a reusable workflow pattern.
 - Algorithm, ISC, audit discipline, frozen handoff ->
   `skills/algorithm/SKILL.md`
 - ISA, audit artifact, structured handoff -> `skills/isa/SKILL.md`
-- Memory, remember, prior context, distill -> `skills/memory/SKILL.md`
 
 ## Intent Routes
 

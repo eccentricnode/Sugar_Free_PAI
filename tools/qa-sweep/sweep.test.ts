@@ -79,7 +79,7 @@ function createFakePi(
     printedArtifactPath?: string;
   } = {},
 ): string {
-  const tempDir = mkdtempSync(join(tmpdir(), "pai-lite-qa-sweep-"));
+  const tempDir = mkdtempSync(join(tmpdir(), "sugar-free-pai-qa-sweep-"));
   createdTempDirs.push(tempDir);
   const fakePi = join(tempDir, "pi");
   const countFile = join(tempDir, "count");
@@ -298,7 +298,7 @@ describe("QA sweep run-set capture", () => {
       cwd: repoRoot,
       env: {
         ...process.env,
-        PAILITE_QA_SWEEP_RUN_SET_ID: fixedRunSetId,
+        SUGARFREEPAI_QA_SWEEP_RUN_SET_ID: fixedRunSetId,
         PATH: `${fakePiDir}:${process.env.PATH ?? ""}`,
       },
       encoding: "utf8",

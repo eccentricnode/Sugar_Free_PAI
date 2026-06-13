@@ -5,10 +5,10 @@ Updated: 2026-06-11
 Use when: A task names a recurring concept that may map to memory, skills, or
 project context.
 
-## pai-lite
+## Sugar Free PAI
 
-- Current local repository/path: `active/pai-lite/`.
-- Local package/project identity: `pai-lite`.
+- Current local repository/path: `active/sugar-free-pai/`.
+- Local package/project identity: `sugar-free-pai`.
 - GitHub/pi install source: `git:github.com/eccentricnode/Sugar_Free_PAI`.
 - Tracked contract: `README.md`
 - Specs: `specs/`
@@ -28,7 +28,7 @@ project context.
 ## Memory
 
 - Entry point: `memory/index.md`
-- Capture workflow: `skills/memory/SKILL.md`
+- Capture/lookup workflow: memory-substrate pi-dev adapter (`PI_MEMORY_ROOT`, default `~/.memory`).
 - Raw lessons: `learning/inbox.md`
 
 ## Routing

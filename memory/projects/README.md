@@ -8,4 +8,4 @@ Add one file per project when continuity would reduce future context gathering.
 
 ## Project Files
 
-- `pai-lite.md` — local identity for the current `active/pai-lite/` repository/package.
+- `sugar-free-pai.md` — local identity for the current `active/sugar-free-pai/` repository/package.

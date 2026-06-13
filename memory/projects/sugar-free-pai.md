@@ -1,14 +1,14 @@
-# pai-lite Project Memory
+# Sugar Free PAI Project Memory
 
 Updated: 2026-06-11
 
-Use when: A task refers to `pai-lite`, SugarFreePAI, SUGAR_FREE_PAI, or the
-current `active/pai-lite/` repository/package.
+Use when: A task refers to Sugar Free PAI, SugarFreePAI, SUGAR_FREE_PAI, `sugar-free-pai`, or the
+current `active/sugar-free-pai/` repository/package.
 
 ## Current identity
 
-The current local repository at `active/pai-lite/` is `pai-lite`. Treat
-`pai-lite` as the local repo/package/library name.
+The current local repository at `active/sugar-free-pai/` is `sugar-free-pai`. Treat
+`sugar-free-pai` as the local repo/package/library name.
 
 ## Remote and install source
 
@@ -17,7 +17,7 @@ The exact remote repo slug is `Sugar_Free_PAI` with capital letters and undersco
 
 ## Naming rule
 
-Prefer `pai-lite` in local, package, status-line, routing, and user-facing
+Prefer `sugar-free-pai` in local, package, status-line, routing, and user-facing
 project references. Use `Sugar_Free_PAI` only when referring to the exact GitHub
 remote slug or pi install source. Treat `SugarFreePAI`, `SUGAR_FREE_PAI`, and
 `sugar_free_pai` as stale local/internal names unless the context is explicitly

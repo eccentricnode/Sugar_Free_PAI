@@ -4,12 +4,12 @@ Updated: 2026-06-11
 
 Use when: A task names a repository, product, client, or ongoing workstream.
 
-## pai-lite
+## Sugar Free PAI
 
-- Current local repository/path: `active/pai-lite/`.
-- Local package/project identity: `pai-lite`.
+- Current local repository/path: `active/sugar-free-pai/`.
+- Local package/project identity: `sugar-free-pai`.
 - GitHub/pi install source: `git:github.com/eccentricnode/Sugar_Free_PAI`.
-- Project memory: `memory/projects/pai-lite.md`
+- Project memory: `memory/projects/sugar-free-pai.md`
 - Tracked contract: `README.md`
 - Specs: `specs/`
 - Local shape source: `SHAPE.md` when present

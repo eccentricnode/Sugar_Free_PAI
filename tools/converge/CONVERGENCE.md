@@ -1,20 +1,20 @@
-# pai-lite — Memory Convergence (Ralph task)
+# Sugar Free PAI — Memory Convergence (Ralph task)
 
 ## The point (plain)
 
-pai-lite must **not own a memory system**. Memory lives in **memory-substrate** — the
+Sugar Free PAI must **not own a memory system**. Memory lives in **memory-substrate** — the
 external store (`PI_MEMORY_ROOT`) plus its background **worker**, which *is* the
-subagent that runs against memory instead of the core AI loop. pai-lite **consumes**
+subagent that runs against memory instead of the core AI loop. Sugar Free PAI **consumes**
 the substrate's pi-dev adapter. This deletes the duplicate in-repo memory and ends
 the "two memory systems" split.
 
 ## Why
 
-- memory-substrate is the substrate-neutral primitive; pai-lite is one consumer.
+- memory-substrate is the substrate-neutral primitive; Sugar Free PAI is one consumer.
   June-2 convergence decision: **subtraction, not glue.**
 - The userspace model (just shipped) says memory is userspace data living
-  *externally*, never in the engine repo. pai-lite's in-repo `memory/` violates it.
-- The substrate worker already IS the subagent-against-memory. pai-lite doesn't
+  *externally*, never in the engine repo. Sugar Free PAI's in-repo `memory/` violates it.
+- The substrate worker already IS the subagent-against-memory. Sugar Free PAI doesn't
   reimplement memory in the core loop — it just loads the adapter.
 
 ## Out of scope — DO NOT TOUCH
@@ -27,14 +27,12 @@ the "two memory systems" split.
 
 ## Target state
 
-1. No `memory/` tree in pai-lite — deleted.
+1. No `memory/` tree in Sugar Free PAI — deleted.
 2. `package.json` `pi.extensions` loads the memory-substrate pi-dev adapter, so
    capture + injection come from its worker (subagent), not from the core loop.
    Wire it the simplest way that actually loads (local path ref or `pi install`);
    record which in AGENTS.md.
-3. `skills/memory/` rewritten **thin**: explicit user-driven lookup/capture against
-   the substrate's **4-type** store (`user|feedback|project|reference`), deferring
-   automatic capture/injection to the worker. No 6-category schema.
+3. No `skills/memory/` tree: explicit lookup/capture is handled by the memory-substrate adapter and `memory_research`, not a duplicate skill or blueprint.
 4. `routing/` no longer encodes the in-repo 6-category memory; points at the
    substrate model where relevant.
 5. `SHAPE.md` + `README.md`: memory is **consumed from memory-substrate, not owned.**
@@ -43,8 +41,7 @@ the "two memory systems" split.
 ## Open decision — SURFACE, don't guess
 
 If the substrate worker already fully covers explicit capture/lookup, increment 3's
-thin `skills/memory` may be redundant. Flag it in this file rather than build
-redundancy; let Austin decide delete-vs-thin.
+`skills/memory` was redundant with the substrate worker and was removed by Austin direction.
 
 ## Backpressure (green every increment)
 
@@ -60,8 +57,7 @@ redundancy; let Austin decide delete-vs-thin.
 
 1. Wire the memory-substrate pi-dev adapter into `package.json` `pi.extensions`;
    confirm it loads cleanly (status line / no error). Record the wiring in AGENTS.md.
-2. Rewrite `skills/memory` (SKILL.md + blueprint.yaml + fixture) thin → defer to the
-   substrate, 4-type schema. (Or, per the open decision, remove it and note why.)
+2. Remove `skills/memory` (SKILL.md + blueprint.yaml + fixture); defer lookup/capture to memory-substrate.
 3. Delete the in-repo `memory/` tree; update `routing/` references.
 4. Update `SHAPE.md` + `README.md` (memory consumed, not owned); reconcile drift.
 5. Final structural checks + `bun test` green; record outcome here. Commit, tag, push.

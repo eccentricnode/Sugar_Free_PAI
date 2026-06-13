@@ -1,5 +1,5 @@
 /**
- * blueprint-loader — pai-lite extension for pi.
+ * blueprint-loader — Sugar Free PAI extension for pi.
  *
  * On every agent turn, scans layered `skills/` roots for `blueprint.yaml`
  * sibling files (Rothman semantic blueprint pattern: Level 5 deterministic
@@ -10,7 +10,8 @@
  * Blueprints are discovered from layered roots, highest precedence first; a
  * skill found in a higher root SHADOWS the same-named skill in a lower root:
  *
- *   1. userspace  — $PAILITE_USERSPACE/skills  (your customizations; never in this repo)
+ *   1. userspace  — $SUGARFREEPAI_USERSPACE/skills  (or legacy $PAILITE_USERSPACE)
+ *                   (your customizations; never in this repo)
  *   2. workspace  — <cwd>/skills               (project-local)
  *   3. package    — this repo's skills/        (shipped defaults / examples)
  *
@@ -61,7 +62,7 @@ interface RenderedBlueprints {
 export function resolveUserspace(
 	env: Record<string, string | undefined> = process.env,
 ): string | undefined {
-	const raw = env.PAILITE_USERSPACE?.trim();
+	const raw = env.SUGARFREEPAI_USERSPACE?.trim() || env.PAILITE_USERSPACE?.trim();
 	return raw ? resolve(raw) : undefined;
 }
 
@@ -185,7 +186,7 @@ export default function (pi: ExtensionAPI) {
 	pi.on("session_start", (_event, ctx) => {
 		const rendered = refresh(ctx.cwd);
 		if (rendered.text) {
-			ctx.ui.setStatus("blueprints", `pai-lite: ${rendered.count} blueprints loaded`);
+			ctx.ui.setStatus("blueprints", `sugar-free-pai: ${rendered.count} blueprints loaded`);
 		} else {
 			ctx.ui.setStatus("blueprints", undefined);
 		}

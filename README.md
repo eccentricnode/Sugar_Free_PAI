@@ -1,11 +1,11 @@
-# pai-lite
+# Sugar Free PAI
 
 > **PAI with the sugar removed**. The sugar was the hook pipeline, the classifier
 > daemon, the mode ceremony, the voice, the Pulse daemon — empty calories from a
-> weaker-model era. Same brain (memory, skills, routing, learning), file-first
+> weaker-model era. Same brain (skills, routing, learning, and memory-substrate), file-first
 > and daemon-free. Tastes the same. No crash.
 
-The local repo/package identity is `pai-lite`. The GitHub remote slug remains
+The local repo/package identity is `sugar-free-pai`. The GitHub remote slug remains
 `Sugar_Free_PAI` for install URLs and git remotes.
 
 A lighter personal AI infrastructure that runs on **pi.dev** as the substrate.
@@ -20,7 +20,7 @@ classifier daemons, mode ceremony, or background services.
 pi install git:github.com/eccentricnode/Sugar_Free_PAI
 ```
 
-This installs `pai-lite` as a [pi package](https://pi.dev/packages):
+This installs `sugar-free-pai` as a [pi package](https://pi.dev/packages):
 
 - The `extensions/blueprint-loader.ts` extension auto-loads, scanning
   `skills/<name>/blueprint.yaml` files on every turn and injecting the
@@ -55,7 +55,7 @@ This project sits between two parents:
   [Daniel Miessler](https://danielmiessler.com/) — the original
   [PAI project](https://github.com/danielmiessler/PAI). Skills, memory, hooks,
   Algorithm, voice, and the scaffolded Digital Assistant thesis on top of
-  [Claude Code](https://www.anthropic.com/claude-code). pai-lite keeps the
+  [Claude Code](https://www.anthropic.com/claude-code). Sugar Free PAI keeps the
   ideas (memory, skills, routing, learning loops) and drops most of the runtime
   machinery.
 - **[pi.dev](https://pi.dev/)** — the coding-agent substrate this runs on.
@@ -84,9 +84,9 @@ discipline is required, not a mode that auto-triggers.
 ## Shape
 
 ```text
-pai-lite/
+sugar-free-pai/
 ├── README.md
-├── memory/      # durable knowledge store
+├── memory/      # local scaffold; durable runtime memory lives in memory-substrate
 ├── skills/      # pi.dev-native SKILL.md workflows
 ├── routing/     # explicit intent maps
 ├── learning/    # inbox, distillations, reviews
@@ -96,7 +96,7 @@ pai-lite/
 
 ## The four pillars
 
-- **Memory** — markdown-first and queryable by direct read.
+- **Memory** — provided by memory-substrate at runtime (`PI_MEMORY_ROOT`, default `~/.memory`).
 - **Skills** — pi.dev-native `skills/<name>/SKILL.md` workflows.
 - **Routing** — small maps from intent to relevant memory and skills.
 - **Learning** — raw notes go to `inbox.md`; reviews promote durable items.
@@ -108,8 +108,10 @@ QMK pattern: separate your stuff from the framework by interface, so `git pull`
 of the engine needs no merge. Register it:
 
 ```sh
-export PAILITE_USERSPACE=~/path/to/your/userspace
+export SUGARFREEPAI_USERSPACE=~/path/to/your/userspace
 ```
+
+`PAILITE_USERSPACE` remains supported as a legacy fallback.
 
 Skills/blueprints resolve **userspace → workspace (`cwd`) → shipped defaults**,
 highest precedence first; a same-named skill in a higher layer *shadows* the
@@ -122,7 +124,7 @@ including the versioned migrator for schema changes — in
 Start with this `README.md` for the tracked project contract. In a local pi.dev
 workspace, `AGENTS.md` may add operator instructions, but it is a local overlay
 and not a required product dependency. For non-trivial work, read
-`routing/index.md`, then load only the memory or skill files that the routing
+`routing/index.md`, then load only the memory-substrate context or skill files that the routing
 maps justify.
 
 Write durable lessons to `learning/inbox.md` only when a reusable signal is

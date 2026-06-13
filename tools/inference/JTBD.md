@@ -31,7 +31,7 @@ instead of wiring their own model plumbing.
 - **Tiers → models:** fast / standard / smart map to three codex model/effort
   settings (the spec decides exact ids; e.g. a cheap spark model for `fast`,
   higher reasoning effort for `smart`).
-- **Home:** a pai-lite tool (`tools/inference/`). It is a *parallel* use of the
+- **Home:** a Sugar Free PAI tool (`tools/inference/`). It is a *parallel* use of the
   codex-spawn pattern, not a dependency on memory-substrate — so no cross-repo
   coupling. (If the spec finds the spawn logic is worth sharing, flag it; don't
   force it.)

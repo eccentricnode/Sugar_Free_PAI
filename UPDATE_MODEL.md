@@ -1,6 +1,6 @@
 # Update Model — base vs. userspace
 
-How pai-lite takes engine updates **without breaking your customizations**.
+How Sugar Free PAI takes engine updates **without breaking your customizations**.
 Modeled on the QMK userspace pattern: separate your stuff from the framework by
 *interface*, so most updates need zero merge.
 
@@ -22,12 +22,12 @@ a same-named unit in a higher layer **shadows** the lower one — *layer, don't
 merge*.
 
 ```sh
-export PAILITE_USERSPACE=~/path/to/your/userspace   # your stuff lives here
+export SUGARFREEPAI_USERSPACE=~/path/to/your/userspace   # your stuff lives here
 ```
 
 Skill/blueprint precedence (implemented in `blueprint-loader.ts`):
 
-1. `$PAILITE_USERSPACE/skills` — your skills (win)
+1. `$SUGARFREEPAI_USERSPACE/skills` — your skills (win)
 2. `<cwd>/skills` — project-local
 3. `<repo>/skills` — shipped defaults / examples
 
@@ -35,9 +35,11 @@ So `git pull` of the engine never overwrites a skill you customized: put it in
 the userspace root under the same name and it shadows the shipped default. No
 3-way merge, because base and userspace never edit the same file.
 
-Status: **implemented for skills.** The same `PAILITE_USERSPACE` root is the
-intended home for `memory/`, `routing/`, and `learning/` as each grows a loader;
+Status: **implemented for skills.** The same `SUGARFREEPAI_USERSPACE` root is the
+intended home for `routing/` and `learning/` as each grows a loader;
 memory is already external via the substrate's `PI_MEMORY_ROOT`.
+
+`PAILITE_USERSPACE` remains supported as a legacy fallback.
 
 ## Mechanism 2 — versioned contract + migrator (the 10% case)
 
@@ -55,7 +57,7 @@ Reserve this for real shape changes only. Everything else is Mechanism 1.
 
 ## Git topology (the piece PAI lacks)
 
-PAI has no upstream-pull mechanism. pai-lite uses a normal fork model:
+PAI has no upstream-pull mechanism. Sugar Free PAI uses a normal fork model:
 
 - `origin` — your deployed instance.
 - `upstream` — the canonical engine; `git pull --rebase upstream main` on a

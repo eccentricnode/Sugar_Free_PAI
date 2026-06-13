@@ -14,7 +14,7 @@ afterEach(() => {
 });
 
 function tempRoot(): string {
-	const d = mkdtempSync(join(tmpdir(), "pailite-bp-"));
+	const d = mkdtempSync(join(tmpdir(), "sugar-free-pai-bp-"));
 	tmp.push(d);
 	return d;
 }
@@ -30,11 +30,15 @@ function withSkill(root: string, name: string, body: string): string {
 describe("resolveUserspace", () => {
 	test("returns undefined when unset or blank", () => {
 		expect(resolveUserspace({})).toBeUndefined();
-		expect(resolveUserspace({ PAILITE_USERSPACE: "   " })).toBeUndefined();
+		expect(resolveUserspace({ SUGARFREEPAI_USERSPACE: "   " })).toBeUndefined();
 	});
 	test("resolves a registered path to absolute", () => {
-		const r = resolveUserspace({ PAILITE_USERSPACE: "/tmp/userspace" });
+		const r = resolveUserspace({ SUGARFREEPAI_USERSPACE: "/tmp/userspace" });
 		expect(r).toBe("/tmp/userspace");
+	});
+	test("keeps legacy PAILITE_USERSPACE as a fallback", () => {
+		const r = resolveUserspace({ PAILITE_USERSPACE: "/tmp/legacy-userspace" });
+		expect(r).toBe("/tmp/legacy-userspace");
 	});
 });
 

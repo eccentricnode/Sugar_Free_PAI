@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Generic QA sweep for any skill in pai-lite.
+# Generic QA sweep for any skill in Sugar Free PAI.
 # Reads skills/<name>/test-fixture.md, runs pi in fresh context for each run,
 # and writes a unique run set under skills/<name>/test-results/runs/.
 #
@@ -57,11 +57,11 @@ if [ -z "$FIXTURE" ]; then
   exit 1
 fi
 
-if [ -n "${PAILITE_QA_SWEEP_RUN_SET_ID:-}" ]; then
-  RUN_SET_ID="$PAILITE_QA_SWEEP_RUN_SET_ID"
+if [ -n "${SUGARFREEPAI_QA_SWEEP_RUN_SET_ID:-${PAILITE_QA_SWEEP_RUN_SET_ID:-}}" ]; then
+  RUN_SET_ID="${SUGARFREEPAI_QA_SWEEP_RUN_SET_ID:-$PAILITE_QA_SWEEP_RUN_SET_ID}"
   case "$RUN_SET_ID" in
     *[!A-Za-z0-9._-]*)
-      echo "PAILITE_QA_SWEEP_RUN_SET_ID contains unsupported characters: $RUN_SET_ID" >&2
+      echo "SUGARFREEPAI_QA_SWEEP_RUN_SET_ID contains unsupported characters: $RUN_SET_ID" >&2
       exit 2
       ;;
   esac

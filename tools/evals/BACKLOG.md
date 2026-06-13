@@ -1,8 +1,8 @@
-# Evals Backlog — pai-lite + memory-substrate
+# Evals Backlog — Sugar Free PAI + memory-substrate
 
 **Date:** 2026-06-08
-**Origin:** "is there a use-case for evals in the running of PAI/pai-lite?" — answer: yes at the *edges*, no in the hot path.
-**Spans:** pai-lite (semantic blueprints) + memory-substrate (write/inject/compact quality).
+**Origin:** "is there a use-case for evals in the running of PAI/Sugar Free PAI?" — answer: yes at the *edges*, no in the hot path.
+**Spans:** Sugar Free PAI (semantic blueprints) + memory-substrate (write/inject/compact quality).
 
 ---
 
@@ -14,7 +14,7 @@
 |---|---|---|
 | 1. Dev-time component evals | off the hot path (blueprints, memory quality) | **YES — build these** |
 | 2. Runtime backpressure in *autonomous* loops | Ralph build loops, UHC verifier-first | **YES — narrow, high-stakes only** |
-| 3. Per-turn interactive runtime evals | every PAI/pai-lite turn | **NO — explicit non-goal** |
+| 3. Per-turn interactive runtime evals | every PAI/Sugar Free PAI turn | **NO — explicit non-goal** |
 
 Category 3 is the heavy-PAI trap reincarnated: a judge on every turn fights native model judgment, adds latency/cost, and degrades as models improve (BPE). Do not wire it.
 
@@ -22,14 +22,14 @@ Category 3 is the heavy-PAI trap reincarnated: a judge on every turn fights nati
 
 ## Priority items
 
-### E1 — Blueprint A/B eval  *(HIGHEST)*  · repo: pai-lite
+### E1 — Blueprint A/B eval  *(HIGHEST)*  · repo: Sugar Free PAI
 - **What:** Measure whether semantic blueprints beat the plain-markdown baseline for skill output, focused on the **soft zone** (open-ended prompts with multiple acceptable outputs), not single-right-answer fixtures.
-- **Why:** pai-lite v0.1 convergence numbers were "misleadingly strong" — every fixture had a single right answer, so the config-only-blueprinting-preserves-diversity hypothesis has **zero data**. "It's working" is currently a vibes judgment. This eval directly de-risks the pai-lite-daily bet.
+- **Why:** Sugar Free PAI v0.1 convergence numbers were "misleadingly strong" — every fixture had a single right answer, so the config-only-blueprinting-preserves-diversity hypothesis has **zero data**. "It's working" is currently a vibes judgment. This eval directly de-risks the Sugar Free PAI-daily bet.
 - **How:**
   - Build a soft-zone fixture set (open-ended tasks; varied valid outputs). Use BeCreative `SyntheticDataExpansion` to grow fixtures.
   - For each skill, run blueprint vs plain-markdown variant; judge with an LLM-judge + rubric on **two axes: output diversity and quality**.
   - Headline metric: does config-only blueprinting *preserve diversity while lifting quality*? (the untested claim).
-- **Done:** a reproducible eval emitting a blueprint-vs-baseline score on soft-zone tasks. Operationalizes the queued `project_pai-lite-semantic-blueprint-experiment.md`.
+- **Done:** a reproducible eval emitting a blueprint-vs-baseline score on soft-zone tasks. Operationalizes the queued `project_Sugar Free PAI-semantic-blueprint-experiment.md`.
 - **Tools:** Evals skill, BeCreative.
 
 ### E2 — Memory-substrate "valid vs good" evals  · repo: memory-substrate
@@ -55,4 +55,4 @@ Category 3 is the heavy-PAI trap reincarnated: a judge on every turn fights nati
 - Per-turn interactive runtime evals (category 3). BPE-fragile; degrades as models improve; latency + token tax; fights native judgment.
 
 ## Sources
-- `Evals` skill, `BeCreative` (synthetic-data expansion), `backpressure-dev.md` (backpressure = autonomy), `project_pai-lite-semantic-blueprint-experiment.md` (the queued A/B), pai-lite v0.1 "misleadingly strong" finding.
+- `Evals` skill, `BeCreative` (synthetic-data expansion), `backpressure-dev.md` (backpressure = autonomy), `project_Sugar Free PAI-semantic-blueprint-experiment.md` (the queued A/B), Sugar Free PAI v0.1 "misleadingly strong" finding.

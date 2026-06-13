@@ -7,8 +7,8 @@ skill names that may need expansion.
 
 ## Current Aliases
 
-- pai-lite -> Current local repository/package identity at `active/pai-lite/`.
-- Sugar_Free_PAI -> Exact GitHub remote/pi install slug for `pai-lite`:
+- sugar-free-pai -> Current local repository/package identity at `active/sugar-free-pai/`.
+- Sugar_Free_PAI -> Exact GitHub remote/pi install slug for `sugar-free-pai`:
   `git:github.com/eccentricnode/Sugar_Free_PAI`.
 - SugarFreePAI / SUGAR_FREE_PAI -> Historical or remote-slug wording; do not
   use as the local repo/package name.
