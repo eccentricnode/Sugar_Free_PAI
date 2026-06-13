@@ -7,7 +7,7 @@ project context.
 
 ## Sugar Free PAI
 
-- Current local repository/path: `active/sugar-free-pai/`.
+- Current local repository/path: `active/Sugar_Free_PAI/`.
 - Local package/project identity: `sugar-free-pai`.
 - GitHub/pi install source: `git:github.com/eccentricnode/Sugar_Free_PAI`.
 - Tracked contract: `README.md`

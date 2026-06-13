@@ -6,7 +6,7 @@ Use when: A task names a repository, product, client, or ongoing workstream.
 
 ## Sugar Free PAI
 
-- Current local repository/path: `active/sugar-free-pai/`.
+- Current local repository/path: `active/Sugar_Free_PAI/`.
 - Local package/project identity: `sugar-free-pai`.
 - GitHub/pi install source: `git:github.com/eccentricnode/Sugar_Free_PAI`.
 - Project memory: `memory/projects/sugar-free-pai.md`

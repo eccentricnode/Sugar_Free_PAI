@@ -8,4 +8,4 @@ Add one file per project when continuity would reduce future context gathering.
 
 ## Project Files
 
-- `sugar-free-pai.md` — local identity for the current `active/sugar-free-pai/` repository/package.
+- `sugar-free-pai.md` — local identity for the current `active/Sugar_Free_PAI/` repository/package.

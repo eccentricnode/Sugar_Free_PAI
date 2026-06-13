@@ -3,11 +3,11 @@
 Updated: 2026-06-11
 
 Use when: A task refers to Sugar Free PAI, SugarFreePAI, SUGAR_FREE_PAI, `sugar-free-pai`, or the
-current `active/sugar-free-pai/` repository/package.
+current `active/Sugar_Free_PAI/` repository/package.
 
 ## Current identity
 
-The current local repository at `active/sugar-free-pai/` is `sugar-free-pai`. Treat
+The current local repository at `active/Sugar_Free_PAI/` is `sugar-free-pai`. Treat
 `sugar-free-pai` as the local repo/package/library name.
 
 ## Remote and install source

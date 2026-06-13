@@ -84,7 +84,7 @@ discipline is required, not a mode that auto-triggers.
 ## Shape
 
 ```text
-sugar-free-pai/
+Sugar_Free_PAI/
 ├── README.md
 ├── memory/      # local scaffold; durable runtime memory lives in memory-substrate
 ├── skills/      # pi.dev-native SKILL.md workflows
