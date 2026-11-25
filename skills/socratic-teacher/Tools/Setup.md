@@ -9,6 +9,10 @@ First check the user-provided or agreed learning workspace for an existing plan/
 For a new journey, determine which input path applies. In either path, establish
 the learner's intended outcome, current baseline, and important constraints or
 preferences when they are missing. Do not ask again for details already given.
+If the goal, baseline, and source-material path are already clear enough to make
+a useful draft, use sensible defaults for optional details such as weekly time
+or preferred study format and state those assumptions. Do not substitute a
+preliminary preferences question for the requested first draft.
 
 **Path A: Source material exists** — Read the materials the learner supplied or explicitly pointed to. Extract concepts, prerequisites, and assumed knowledge. Shape the selection and depth around the learner's goal and baseline. Do not claim to have read material that was not accessible.
 
@@ -34,7 +38,7 @@ Build a goal-relevant curriculum and order concepts so that:
 
 ## 4. Present the Learning Plan for review
 
-Prepare the plan content using the format below, then show the complete plan in the conversation and invite corrections. This is a draft for review, not a file write. Check that its concepts serve the stated goal, prerequisites are ordered, applications are practical, and every exit criterion is observable in the learner's answers or work (not just self-reported confidence). Each concept should retain explain, apply, tradeoff, and connect criteria. Revise it to learner feedback and present the revised plan for approval.
+Prepare the plan content using the format below, then show the complete plan in the conversation and invite corrections. This is a draft for review, not a file write. Check that its concepts serve the stated goal, prerequisites are ordered, applications are practical, and every exit criterion is observable in the learner's answers or work (not just self-reported confidence). Each concept should retain explain, apply, tradeoff, and connect criteria. Revise it to learner feedback and present the revised plan for approval. In this same draft response, make the next action explicit: ask the learner to review and approve (or request changes to) the plan, and, if they have not supplied a destination, ask which exact workspace/folder should hold the plan and progress files. A single focused next-action question may combine plan approval/review and destination handoff. Do not write either file in this turn.
 
 Use this format for the draft; do not save it yet:
 
