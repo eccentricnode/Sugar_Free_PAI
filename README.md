@@ -36,7 +36,8 @@ This installs `sugar-free-pai` as a [pi package](https://pi.dev/packages):
 Keep the boundaries clear: **extension = runtime code; skill = `SKILL.md`;
 blueprint = optional structured configuration for a skill.** A skill and an
 extension may support the same workflow, but are distinct artifacts and should
-be named/documented separately. For example, `show-me` is intentionally a
+be named/documented separately. `socratic-teacher` is a skill with supporting
+`Tools/` guides and eval fixtures; it is not an extension. `show-me` is another
 skill-only example and has no blueprint.
 
 For project-local install (writes to `.pi/settings.json`):
