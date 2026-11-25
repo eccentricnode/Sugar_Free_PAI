@@ -22,11 +22,22 @@ pi install git:github.com/eccentricnode/Sugar_Free_PAI
 
 This installs `sugar-free-pai` as a [pi package](https://pi.dev/packages):
 
-- The `extensions/blueprint-loader.ts` extension auto-loads, scanning
-  `skills/<name>/blueprint.yaml` files on every turn and injecting the
-  deterministic config layer into the system prompt.
-- All `skills/` are registered as pi skills, using pi.dev's native `SKILL.md`
-  convention plus the optional sibling `blueprint.yaml`.
+- All `skills/` are registered as pi skills through pi's native
+  `skills/<name>/SKILL.md` convention. `SKILL.md` is the skill: it provides
+  instructions and can stand alone.
+- `blueprint.yaml` is an optional sibling file, not a skill or an extension.
+  When present, it adds structured constraints (such as required output
+  sections or acceptance criteria) for that skill. Do not add one by default;
+  add one when those constraints need to be explicit and stable.
+- `extensions/blueprint-loader.ts` is executable extension code. It scans the
+  layered skill directories for optional blueprints and injects them into the
+  system prompt; it does not register skills or turn a blueprint into one.
+
+Keep the boundaries clear: **extension = runtime code; skill = `SKILL.md`;
+blueprint = optional structured configuration for a skill.** A skill and an
+extension may support the same workflow, but are distinct artifacts and should
+be named/documented separately. For example, `show-me` is intentionally a
+skill-only example and has no blueprint.
 
 For project-local install (writes to `.pi/settings.json`):
 
