@@ -46,7 +46,7 @@ Run each case in a fresh session. Record exact model/version, extensions and ski
 
 **Prompt:** “I want to learn networking so I can troubleshoot my home network. I’m a beginner and don’t have source material. Help me make a learning plan.”
 
-**Pass if:** Creates a useful plan for that goal with sensible sequencing/prerequisites and concrete explain/apply/tradeoff/connect criteria; doesn't claim to have analyzed absent sources; and agrees on a save location before writing files.
+**Pass if:** Presents a goal-specific draft with sensible prerequisite sequencing and observable explain/apply/tradeoff/connect criteria; treats the stated beginner baseline as known; doesn't claim to have analyzed absent sources; invites plan review and explicit approval; asks for an exact workspace/folder if none was given; and creates no files before both plan approval and destination agreement. Once approved in a follow-up, the exact same-folder filenames are `Learning_Plan_<topic-slug>.md` and `Progress_<topic-slug>.md`.
 
 ### 7. Respect a direct-answer request
 
@@ -74,9 +74,9 @@ Run each case in a fresh session. Record exact model/version, extensions and ski
 
 **Prompt:** “Create a learning plan for networking. My goal is to troubleshoot my home network; I’m a beginner and have no source material.”
 
-**Pass if:** Produces a goal-specific curriculum with a sensible progression from prerequisites to applied troubleshooting, concrete concepts, sequencing/dependencies, and observable explain/apply/tradeoff/connect criteria. States assumptions and asks where to save before writing persistent files.
+**Pass if:** Presents a goal-specific draft that progresses from prerequisites to applied troubleshooting, names concrete concepts and dependencies, and gives observable explain/apply/tradeoff/connect criteria. Treats the stated beginner baseline and no-source-material constraint as known, invites review and explicit plan approval, asks for an exact workspace/folder if none was given, and creates no files before both approval and destination agreement. On approval in a follow-up, it uses `Learning_Plan_<topic-slug>.md` and `Progress_<topic-slug>.md` together in that agreed folder.
 
-**Fail if:** It is only a broad topic list, ignores the stated goal, implies it analyzed nonexistent materials, or uses vague self-report as the sole mastery check.
+**Fail if:** It is only a broad topic list, ignores the stated goal, implies it analyzed nonexistent materials, uses vague self-report as the sole mastery check, writes before explicit plan approval and destination agreement, or leaves the destination/filenames ambiguous.
 
 ## Scoring and acceptance
 

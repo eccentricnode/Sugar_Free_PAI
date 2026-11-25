@@ -6,11 +6,13 @@ Instructions for setting up a new topic for Socratic teaching. Run this when a t
 
 First check the user-provided or agreed learning workspace for an existing plan/progress pair. If found, resume it instead of creating a duplicate. Never treat unrelated plans elsewhere in the repository as the learner's plan.
 
-For a new journey, determine which input path applies:
+For a new journey, determine which input path applies. In either path, establish
+the learner's intended outcome, current baseline, and important constraints or
+preferences when they are missing. Do not ask again for details already given.
 
-**Path A: Source material exists** — Read the materials the learner supplied or explicitly pointed to. Extract concepts, prerequisites, and assumed knowledge. Do not claim to have read material that was not accessible.
+**Path A: Source material exists** — Read the materials the learner supplied or explicitly pointed to. Extract concepts, prerequisites, and assumed knowledge. Shape the selection and depth around the learner's goal and baseline. Do not claim to have read material that was not accessible.
 
-**Path B: Topic only** — Build a curriculum from general knowledge, scoped to the learner's goal. Ask only for missing essentials: intended outcome (e.g. project, interview, practical task), current baseline, and important constraints or preferences. If these are already stated, don't ask them again.
+**Path B: Topic only** — Build a curriculum from general knowledge, scoped to the learner's goal. Ask only for missing essentials: intended outcome (e.g. project, interview, practical task), current baseline, and important constraints or preferences.
 
 Both paths produce a Learning Plan and a Progress file in a learner-approved journey workspace.
 
@@ -25,14 +27,14 @@ Both paths produce a Learning Plan and a Progress file in a learner-approved jou
 
 ## 3. Sequence
 
-Order concepts so that:
+Build a goal-relevant curriculum and order concepts so that:
 - Prerequisites come before things that depend on them
 - Concrete/intuitive concepts come before abstract ones
 - Each concept builds on the last
 
-## 4. Draft the Learning Plan for review
+## 4. Present the Learning Plan for review
 
-Draft `Learning_Plan_[TopicName].md` content using the format below. Before creating or overwriting files, show the plan to the learner and invite corrections. Check that it has concrete concepts, prerequisite ordering, practical application, and observable exit criteria. Adjust it to learner feedback.
+Prepare the plan content using the format below, then show the complete plan in the conversation and invite corrections. This is a draft for review, not a file write. Check that its concepts serve the stated goal, prerequisites are ordered, applications are practical, and every exit criterion is observable in the learner's answers or work (not just self-reported confidence). Each concept should retain explain, apply, tradeoff, and connect criteria. Revise it to learner feedback and present the revised plan for approval.
 
 Use this format for the draft; do not save it yet:
 
@@ -66,9 +68,9 @@ Use this format for the draft; do not save it yet:
 - [Important related concepts not covered — potential extensions]
 ```
 
-## 5. Confirm destination, then create the journey files
+## 5. Get approval for the plan and exact destination, then create the journey files
 
-After the learner approves the plan, confirm the journey folder/workspace and filenames. Never choose an ambiguous save location or overwrite an existing plan without explicit agreement. Create `Learning_Plan_[TopicName].md` and `Progress_[TopicName].md` together in that folder. The progress file is initialized from the approved concept sequence.
+Do not write either file until the learner has explicitly approved the displayed plan and agreed to the exact destination. If the learner has not named a destination, ask which workspace or folder to use; never assume a universal workspace path. State the resolved folder and both exact filenames and get agreement before writing. Use this naming convention in the agreed folder: `Learning_Plan_<topic-slug>.md` and `Progress_<topic-slug>.md` (lowercase topic slug, hyphen-separated). Keep both files together. If either filename already exists, stop and ask whether to resume/update that journey or choose another slug or folder; never overwrite it as a new plan. Initialize progress from the approved concept sequence and include a relative link to the learning plan, for example `[Learning Plan](Learning_Plan_<topic-slug>.md)`.
 
 Use this format for the Progress file:
 
@@ -77,6 +79,7 @@ Use this format for the Progress file:
 
 **Last session:** Not started
 **Status:** Not started
+**Learning plan:** [Learning_Plan_<topic-slug>.md](Learning_Plan_<topic-slug>.md)
 
 ## Concepts
 
@@ -92,4 +95,4 @@ Use this format for the Progress file:
 
 ## 6. Confirm the learner's journey
 
-Present the approved plan and progress file summary. Confirm that the folder and filenames are correct and ask whether the learner wants to begin now or pause. On later sessions, update the same progress tracker with the date, concepts covered, which of the four exit criteria passed or remain weak, and the next concept. Do not mark a concept complete unless the learner demonstrates the criteria in `Tools/Method.md`.
+After writing, report the exact folder and filenames and link the progress tracker to the plan (and the plan back to progress, where practical). Ask whether the learner wants to begin now or pause. On later sessions, resume only this agreed pair (or a pair the learner explicitly supplies), follow the plan's next incomplete concept, and update the same progress tracker with the date, concepts covered, which of the four exit criteria passed or remain weak, and the next concept. Keep progress linked to the plan with a relative link; when priorities or the sequence change, update the plan and tracker together. Do not mark a concept complete unless the learner demonstrates the criteria in `Tools/Method.md`.
