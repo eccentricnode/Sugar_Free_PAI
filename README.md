@@ -40,6 +40,30 @@ be named/documented separately. `socratic-teacher` is a skill with supporting
 `Tools/` guides and eval fixtures; it is not an extension. `show-me` is another
 skill-only example and has no blueprint.
 
+### Socratic Teacher source and packaging
+
+The canonical Socratic Teacher skill lives in
+[`eccentricnode/socratic-teacher`](https://github.com/eccentricnode/socratic-teacher),
+tracked here as `vendor/socratic-teacher` (a Git submodule). `skills/socratic-teacher/`
+is a synchronized package snapshot: Pi's Git package installer uses a regular
+clone and does not initialize submodules, so the tracked snapshot keeps the skill
+available to normal Sugar_Free_PAI installs.
+
+After changing or updating the submodule, refresh the package snapshot with:
+
+```sh
+./scripts/sync-socratic-teacher.sh
+```
+
+Check for drift without changing files:
+
+```sh
+./scripts/sync-socratic-teacher.sh --check
+```
+
+When cloning Sugar_Free_PAI for development, initialize submodules with
+`git submodule update --init --recursive`.
+
 For project-local install (writes to `.pi/settings.json`):
 
 ```sh
