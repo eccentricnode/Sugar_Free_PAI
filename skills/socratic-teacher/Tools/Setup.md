@@ -2,38 +2,39 @@
 
 Instructions for setting up a new topic for Socratic teaching. Run this when a topic folder has no Learning Plan or Progress file yet.
 
-## Determine Input Type
+## 1. Discover the learning journey
 
-**Path A: Source material exists** — There are .md files (lessons, articles, transcripts) in the topic folder. Read them all, then extract concepts from that material.
+First check the user-provided or agreed learning workspace for an existing plan/progress pair. If found, resume it instead of creating a duplicate. Never treat unrelated plans elsewhere in the repository as the learner's plan.
 
-**Path B: Topic only, no material** — The folder is empty or the learner just named a subject. Build a curriculum from your own knowledge. Ask the learner what their goal is (interview prep, general understanding, building something specific) so the plan can be shaped toward that outcome.
+For a new journey, determine which input path applies:
 
-Both paths produce the same output: a Learning Plan and a Progress file.
+**Path A: Source material exists** — Read the materials the learner supplied or explicitly pointed to. Extract concepts, prerequisites, and assumed knowledge. Do not claim to have read material that was not accessible.
 
-## Step 1: Extract or Build Concepts
+**Path B: Topic only** — Build a curriculum from general knowledge, scoped to the learner's goal. Ask only for missing essentials: intended outcome (e.g. project, interview, practical task), current baseline, and important constraints or preferences. If these are already stated, don't ask them again.
 
-**Path A (from material):** Read all source files. Identify:
+Both paths produce a Learning Plan and a Progress file in a learner-approved journey workspace.
+
+## 2. Extract or build concepts
+
+**Path A (from material):** Read all provided source files. Identify:
 - Core concepts — the distinct ideas or skills being taught
 - Dependencies — which concepts require understanding of others first
 - Assumed knowledge — what the material assumes you already know
 
-**Path B (from topic):** Ask the learner:
-- What's the topic?
-- What's the goal? (interview, project, general understanding)
-- What do you already know? (so we skip basics or start from scratch)
+**Path B (from topic):** Use the learner's stated topic, goal, baseline, and constraints. Ask a concise follow-up only for missing information, then build a curriculum of core concepts with dependencies, scoped to their outcome.
 
-Then build a curriculum of core concepts with dependencies, scoped to their goal.
-
-## Step 2: Sequence
+## 3. Sequence
 
 Order concepts so that:
 - Prerequisites come before things that depend on them
 - Concrete/intuitive concepts come before abstract ones
 - Each concept builds on the last
 
-## Step 3: Write Learning_Plan_[TopicName].md
+## 4. Draft the Learning Plan for review
 
-Save in the topic folder. Use this format:
+Draft `Learning_Plan_[TopicName].md` content using the format below. Before creating or overwriting files, show the plan to the learner and invite corrections. Check that it has concrete concepts, prerequisite ordering, practical application, and observable exit criteria. Adjust it to learner feedback.
+
+Use this format for the draft; do not save it yet:
 
 ```markdown
 # Learning Plan: [Topic Name]
@@ -65,14 +66,16 @@ Save in the topic folder. Use this format:
 - [Important related concepts not covered — potential extensions]
 ```
 
-## Step 4: Write Progress_[TopicName].md
+## 5. Confirm destination, then create the journey files
 
-Create alongside the learning plan, in the same topic folder. Use this format:
+After the learner approves the plan, confirm the journey folder/workspace and filenames. Never choose an ambiguous save location or overwrite an existing plan without explicit agreement. Create `Learning_Plan_[TopicName].md` and `Progress_[TopicName].md` together in that folder. The progress file is initialized from the approved concept sequence.
+
+Use this format for the Progress file:
 
 ```markdown
 # Progress: [Topic Name]
 
-**Last session:** [date]
+**Last session:** Not started
 **Status:** Not started
 
 ## Concepts
@@ -80,25 +83,13 @@ Create alongside the learning plan, in the same topic folder. Use this format:
 | # | Concept | Status | Weak areas | Date |
 |---|---------|--------|------------|------|
 | 1 | [Name]  | Not started | — | — |
-| 2 | [Name]  | Not started | — | — |
 | ...
 
 ## Session Log
 
-[Empty until first session. After each session, add:]
-### [Date]
-- Covered: [concepts worked on]
-- Completed: [concepts that met all 4 exit criteria]
-- Weak: [concepts or specific criteria that need revisit]
-- Next: [where to pick up]
+[Empty until first session.]
 ```
 
-## Step 5: Confirm With Learner
+## 6. Confirm the learner's journey
 
-Present the learning plan. Ask:
-1. Does the sequence make sense?
-2. Anything to skip (already known)?
-3. Anything to add?
-4. Ready to start?
-
-Adjust based on feedback before starting any teaching.
+Present the approved plan and progress file summary. Confirm that the folder and filenames are correct and ask whether the learner wants to begin now or pause. On later sessions, update the same progress tracker with the date, concepts covered, which of the four exit criteria passed or remain weak, and the next concept. Do not mark a concept complete unless the learner demonstrates the criteria in `Tools/Method.md`.
